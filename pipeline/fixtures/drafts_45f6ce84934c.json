@@ -1,0 +1,67 @@
+{
+  "input_key": "45f6ce84934c",
+  "output": {
+    "drafts": [
+      {
+        "customer_id": "a01",
+        "ticket_id": "t248",
+        "body": "Thanks for the follow-up, and I'm sorry you've been chasing this for four days. You're right that it's on our side — we've confirmed a checkout failure affecting high-value orders across a number of accounts, and it lines up with a recent deploy on our end. It's escalated to engineering now as a top priority, though I don't have a fix timeline I can give you yet. I've noted the ~$18k in abandoned carts on your ticket so it's part of the record when we review impact — I'll update you as soon as engineering has something concrete."
+      },
+      {
+        "customer_id": "a03",
+        "ticket_id": "t224",
+        "body": "Thanks for the detail on the three failures (€1,250, €1,900 and €4,100) and for testing with the €40 order — that contrast is exactly what we needed. We've confirmed a problem affecting checkout on higher-value orders across multiple accounts, and it correlates with a recent deploy on our side. Engineering is investigating now; no fix has shipped yet, so I can't give you a firm time. Smaller orders should keep processing normally in the meantime, and I'll come back to you as soon as I have news."
+      },
+      {
+        "customer_id": "a05",
+        "ticket_id": "t226",
+        "body": "Your customers' banks are right — no charge attempt is reaching them, because the order is failing on our side before it gets that far. So the \"decline\" message is misleading; it isn't a card problem. We've confirmed this affects higher-value orders like the $1,600 and $2,050 ones you saw, it's tied to a recent deploy, and engineering is on it now. No fix is out yet, but I'll let you know as soon as that changes."
+      },
+      {
+        "customer_id": "a08",
+        "ticket_id": "t228",
+        "body": "Thanks for the trace — that's genuinely useful. We've confirmed POST /v2/transactions is returning 500s on higher-value requests, matching your observation that only four-figure-plus orders are affected, and it correlates with a deploy we made Tuesday afternoon. It's escalated to engineering and under active investigation; nothing has shipped yet, so I can't give you a fix time. I'll follow up here with whatever engineering finds."
+      },
+      {
+        "customer_id": "a10",
+        "ticket_id": "t230",
+        "body": "Treating this as P1 — you're one of 12 accounts hitting the same thing, and it's already escalated to engineering. We've confirmed that high-value carts, including five-figure ones like your quarterly restocks, fail at checkout, and it correlates with a recent deploy on our side rather than anything browser-specific (which matches your Chrome and Edge results). No fix has shipped yet, so I won't guess at a time. I'll update you directly as engineering makes progress."
+      },
+      {
+        "customer_id": "a02",
+        "ticket_id": "t233",
+        "body": "Thanks for reporting this, and bad timing with high season. We've confirmed a checkout failure affecting higher-value orders — bookings over €1,000 in your case — across several accounts, and it's tied to a recent deploy on our side, not to Safari or Firefox specifically. Engineering is investigating now; there's no fix out yet, so I can't promise a date. Smaller bookings should continue to go through while we work on it, and I'll update you as soon as I hear more."
+      },
+      {
+        "customer_id": "a04",
+        "ticket_id": "t235",
+        "body": "Sorry you lost that sale — the white screen your shopper hit is a real bug on our side, not anything she did wrong. We've confirmed that checkout is failing on higher-value orders across a number of accounts, and it lines up with a recent deploy we made. Engineering is investigating now; no fix has gone out yet, so I don't have a date to give you. If you can tell me roughly what her cart total was, that helps confirm it's the same issue, and I'll update you when there's news."
+      },
+      {
+        "customer_id": "a06",
+        "ticket_id": "t238",
+        "body": "Thanks for the console detail — the 30-second timeout on /v2/transactions matches what we're seeing elsewhere. We've confirmed that requests for higher-value orders, like your distributor orders above ¥150,000, are failing while smaller consumer orders go through, and it correlates with a recent deploy on our side. It's escalated to engineering and under investigation; nothing has shipped yet, so I can't give you a fix time. I'll follow up here as soon as engineering has something."
+      },
+      {
+        "customer_id": "a09",
+        "ticket_id": "t241",
+        "body": "Thanks for testing the 5-seat purchase — that comparison confirms what we suspected. We've identified a problem where higher-value orders fail at the final checkout step, which is why the 40+ seat licences hang while small purchases complete, and it correlates with a recent deploy on our side. Engineering is investigating now; no fix has shipped yet, so I can't give you a date. I'll update you as soon as there's progress."
+      },
+      {
+        "customer_id": "a11",
+        "ticket_id": "t243",
+        "body": "Thanks for flagging this — both of those failed orders being over $1,000 fits a problem we've already confirmed. Checkout is failing on higher-value orders across a number of accounts, and it correlates with a recent deploy on our side, so it's nothing to do with your setup. Engineering is investigating now, but no fix has shipped yet, so I can't give you a time. If it helps with the customers messaging you, you can tell them it's a temporary problem with the payment step that we're working on."
+      },
+      {
+        "customer_id": "a12",
+        "ticket_id": "t245",
+        "body": "Yes — it's a problem on our side, and you're not the only one seeing it. Checkout is failing on higher-value orders, which fits the two big landscaping quotes that couldn't be completed this morning, and it correlates with a recent deploy we made. Engineering has it and is investigating; no fix has shipped yet, so I can't promise a date. Smaller orders should still go through, and I'll let you know as soon as there's an update."
+      },
+      {
+        "customer_id": "a07",
+        "ticket_id": "t246",
+        "body": "The endless spinner on that $1,300 patio set is a bug on our end — the payment request never comes back, so the page just keeps waiting. We've confirmed this affects higher-value orders across several accounts and it isn't browser-related, which matches you seeing it in both Chrome and Safari. It correlates with a recent deploy and is now with engineering; no fix has shipped yet, so I can't give you a date. Cheaper items should keep working, and I'll update you when I hear more."
+      }
+    ]
+  }
+}

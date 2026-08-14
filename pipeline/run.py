@@ -73,11 +73,29 @@ def cmd_analyze(corpus, cluster_id):
     if cluster_id not in investigations:
         sys.exit(f"no investigation for {cluster_id} — run investigate first")
     analysis = run_analysis(corpus, cluster, investigations[cluster_id])
-    packet = analysis.pop("packet_markdown")
+    # packet_markdown is emitted last and can be lost to gateway output caps
+    # (seen with Mesh); the structured packet is what the UI renders, so fall
+    # back to deriving the markdown from it.
+    packet = analysis.pop("packet_markdown", None)
+    if packet is None:
+        packet = _packet_to_markdown(analysis.get("packet", {}))
+        print("[analyze] packet_markdown missing from model output; derived from structured packet")
     _write(f"analysis_{cluster_id}.json", analysis)
     _write(f"packet_{cluster_id}.md",
            packet + "\n\n---\n*Generated from synthetic demo data.*\n")
     return analysis
+
+
+def _packet_to_markdown(p: dict) -> str:
+    lines = [f"# {p.get('title', 'Escalation packet')}", "",
+             f"**Impact:** {p.get('impact', '')}", "", "## Evidence"]
+    for item in p.get("evidence", []):
+        cites = ", ".join(item.get("cites", []))
+        lines.append(f"- {item.get('text', '')} [{cites}]")
+    lines += ["", f"**Suggested repro:** {p.get('suggested_repro', '')}", "",
+              f"**Not examined:** {p.get('not_examined', '')}", "",
+              f"**Cross-ticket fact:** {p.get('merged_note', '')}"]
+    return "\n".join(lines)
 
 
 def cmd_drafts(corpus, cluster_id):

@@ -3,35 +3,99 @@
     {
       "id": "c1",
       "name": "Checkout fails on high-value orders",
-      "ticket_ids": ["t204", "t218", "t231", "t236", "t241", "t247", "t252", "t255", "t258", "t260", "t262", "t263"],
+      "ticket_ids": [
+        "t223",
+        "t224",
+        "t226",
+        "t228",
+        "t230",
+        "t233",
+        "t235",
+        "t238",
+        "t241",
+        "t243",
+        "t245",
+        "t246",
+        "t248"
+      ],
       "first_seen": "2026-08-11T14:14:00Z",
       "customer_count": 12,
-      "score": 88
+      "score": 100
     },
     {
       "id": "c2",
-      "name": "CSV export times out on large date ranges",
-      "ticket_ids": ["t112", "t139", "t171", "t198", "t226"],
-      "first_seen": "2026-08-08T09:30:00Z",
-      "customer_count": 5,
-      "score": 47
+      "name": "Mobile app signs users out repeatedly",
+      "ticket_ids": [
+        "t205",
+        "t207",
+        "t211",
+        "t215",
+        "t229",
+        "t239",
+        "t244"
+      ],
+      "first_seen": "2026-08-07T08:20:00Z",
+      "customer_count": 6,
+      "score": 70
     },
     {
       "id": "c3",
-      "name": "Password reset emails delayed for EU accounts",
-      "ticket_ids": ["t145", "t167", "t203", "t229"],
-      "first_seen": "2026-08-09T16:05:00Z",
-      "customer_count": 4,
-      "score": 39
+      "name": "Analytics and sales reports time out",
+      "ticket_ids": [
+        "t213",
+        "t216",
+        "t221",
+        "t236",
+        "t240",
+        "t247"
+      ],
+      "first_seen": "2026-08-09T13:20:00Z",
+      "customer_count": 5,
+      "score": 65
     },
     {
       "id": "c4",
-      "name": "Dashboard charts render blank on Safari",
-      "ticket_ids": ["t128", "t190", "t221"],
-      "first_seen": "2026-08-07T11:48:00Z",
-      "customer_count": 2,
-      "score": 21
+      "name": "Password reset emails never arrive",
+      "ticket_ids": [
+        "t208",
+        "t212",
+        "t217",
+        "t220",
+        "t227",
+        "t231",
+        "t234"
+      ],
+      "first_seen": "2026-08-08T10:40:00Z",
+      "customer_count": 5,
+      "score": 49
+    },
+    {
+      "id": "c5",
+      "name": "CSV export garbles accented and non-Latin characters",
+      "ticket_ids": [
+        "t209",
+        "t214",
+        "t218",
+        "t222",
+        "t237"
+      ],
+      "first_seen": "2026-08-08T14:25:00Z",
+      "customer_count": 4,
+      "score": 42
     }
   ],
-  "ungrouped_ids": ["t101", "t107", "t118", "t126", "t142", "t155", "t163", "t178", "t185", "t210", "t245", "t259"]
+  "ungrouped_ids": [
+    "t201",
+    "t202",
+    "t203",
+    "t204",
+    "t206",
+    "t210",
+    "t219",
+    "t225",
+    "t232",
+    "t242",
+    "t249",
+    "t250"
+  ]
 }

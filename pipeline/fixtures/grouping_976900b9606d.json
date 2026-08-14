@@ -1,0 +1,70 @@
+{
+  "input_key": "976900b9606d",
+  "output": {
+    "groups": [
+      {
+        "name": "Checkout fails on high-value orders",
+        "ticket_ids": [
+          "t223",
+          "t224",
+          "t226",
+          "t228",
+          "t230",
+          "t233",
+          "t235",
+          "t238",
+          "t241",
+          "t243",
+          "t245",
+          "t246",
+          "t248"
+        ]
+      },
+      {
+        "name": "Mobile app signs users out repeatedly",
+        "ticket_ids": [
+          "t205",
+          "t207",
+          "t211",
+          "t215",
+          "t229",
+          "t239",
+          "t244"
+        ]
+      },
+      {
+        "name": "Password reset emails never arrive",
+        "ticket_ids": [
+          "t208",
+          "t212",
+          "t217",
+          "t220",
+          "t227",
+          "t231",
+          "t234"
+        ]
+      },
+      {
+        "name": "CSV export garbles accented and non-Latin characters",
+        "ticket_ids": [
+          "t209",
+          "t214",
+          "t218",
+          "t222",
+          "t237"
+        ]
+      },
+      {
+        "name": "Analytics and sales reports time out",
+        "ticket_ids": [
+          "t213",
+          "t216",
+          "t221",
+          "t236",
+          "t240",
+          "t247"
+        ]
+      }
+    ]
+  }
+}

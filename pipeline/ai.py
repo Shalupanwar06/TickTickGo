@@ -11,6 +11,21 @@ import re
 from pathlib import Path
 from typing import Any
 
+def _load_dotenv():
+    """Load repo-root .env into os.environ (existing env vars win). No deps."""
+    env = Path(__file__).parent.parent / ".env"
+    if not env.exists():
+        return
+    for line in env.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+_load_dotenv()
+
 MODEL = "claude-opus-5"
 # Provider switch: MESH_API_KEY set -> Mesh API (OpenAI-compatible gateway,
 # https://developers.meshapi.ai), else the Anthropic API directly. Mesh model
@@ -39,8 +54,33 @@ def _get_client() -> Any:
     return _client
 
 
+def _close_truncated_json(text: str) -> str:
+    """Append the closers a truncated JSON object is missing (observed with
+    Mesh: complete content, but the final `}`s cut off)."""
+    stack = []
+    in_string = escape = False
+    for ch in text:
+        if escape:
+            escape = False
+        elif in_string:
+            if ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+        elif ch == '"':
+            in_string = True
+        elif ch in "{[":
+            stack.append("}" if ch == "{" else "]")
+        elif ch in "}]" and stack:
+            stack.pop()
+    if in_string:
+        text += '"'
+    return text + "".join(reversed(stack))
+
+
 def parse_json_response(text: str) -> dict:
-    """Parse a JSON object out of model text, tolerating code fences and prose."""
+    """Parse a JSON object out of model text, tolerating code fences, prose,
+    and truncated closing braces."""
     text = text.strip()
     fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
     if fenced:
@@ -48,10 +88,17 @@ def parse_json_response(text: str) -> dict:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        start, end = text.find("{"), text.rfind("}")
-        if start == -1 or end <= start:
-            raise
-        return json.loads(text[start:end + 1])
+        pass
+    start = text.find("{")
+    if start == -1:
+        raise json.JSONDecodeError("no JSON object found", text, 0)
+    end = text.rfind("}")
+    if end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            pass
+    return json.loads(_close_truncated_json(text[start:]))
 
 
 def _fixture_key(payload: dict) -> str:
@@ -86,18 +133,29 @@ def call_structured(name: str, system: str, user: str, schema: dict, max_tokens:
                 "exactly. Output only the JSON — no prose, no code fences.\nSchema:\n"
                 + json.dumps(schema)
             )
-            response = client.chat.completions.create(
-                model=MESH_MODEL,
-                max_tokens=max_tokens,
-                messages=[
-                    {"role": "system", "content": system + schema_note},
-                    {"role": "user", "content": user},
-                ],
-            )
-            choice = response.choices[0]
-            if choice.finish_reason == "length":
-                raise RuntimeError(f"{name}: output truncated at max_tokens={max_tokens}")
-            output = parse_json_response(choice.message.content or "")
+            # Without API-enforced structured output, long replies occasionally
+            # arrive as malformed JSON — one resample usually fixes it.
+            last_err = None
+            for attempt in range(2):
+                response = client.chat.completions.create(
+                    model=MESH_MODEL,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {"role": "system", "content": system + schema_note},
+                        {"role": "user", "content": user},
+                    ],
+                )
+                choice = response.choices[0]
+                if choice.finish_reason == "length":
+                    raise RuntimeError(f"{name}: output truncated at max_tokens={max_tokens}")
+                try:
+                    output = parse_json_response(choice.message.content or "")
+                    break
+                except json.JSONDecodeError as err:
+                    last_err = err
+                    print(f"[ai] {name}: malformed JSON (attempt {attempt + 1}); retrying")
+            else:
+                raise RuntimeError(f"{name}: malformed JSON after retries ({last_err})")
         else:
             response = client.messages.create(
                 model=MODEL,

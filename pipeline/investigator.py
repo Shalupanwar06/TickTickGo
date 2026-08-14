@@ -218,8 +218,10 @@ def _live_run_mesh(corpus: dict, cluster: dict, user: str, fixture, fixture_key:
             steps.append(step)
             if on_step:
                 on_step(step)
+            # Mesh's upstream (Bedrock Converse) requires tool results to be
+            # JSON objects, and our tools often return arrays — wrap them.
             messages.append({"role": "tool", "tool_call_id": tc.id,
-                             "content": json.dumps(result, ensure_ascii=False)})
+                             "content": json.dumps({"result": result}, ensure_ascii=False)})
 
     record = {
         "cluster_id": cluster["id"],

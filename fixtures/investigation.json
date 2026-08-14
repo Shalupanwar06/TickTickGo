@@ -1,52 +1,241 @@
 {
   "cluster_id": "c1",
-  "created_at": "2026-08-12T11:00:00Z",
+  "created_at": "2026-08-14T21:02:21Z",
   "steps": [
     {
       "n": 1,
-      "tool": "search_ticket_history",
-      "input": { "query": "checkout payment 500 confirm", "window_days": 30 },
-      "result_summary": "14 matching tickets in the last 30 days; 12 within the last 48 hours. No similar reports in the prior four weeks. [t204, t218, t231, t236]"
+      "tool": "check_deploys",
+      "input": {
+        "since": "2026-08-09T00:00:00Z",
+        "until": "2026-08-11T15:00:00Z"
+      },
+      "result_summary": "[{\"id\": \"d5\", \"shipped_at\": \"2026-08-09T11:20:00Z\", \"service\": \"web-storefront\", \"description\": \"Seasonal theme assets and CSS refresh\"}, {\"id\": \"d6\", \"shipped_at\": \"2026-08-11T13:36:00Z\", \"service\": \"payment-service\", \"description\": \"Enable enhanced fraud screening for high-value transactions\"}]"
     },
     {
       "n": 2,
-      "tool": "get_account",
-      "input": { "customer_ids": ["a01", "a03", "a07", "a09"] },
-      "result_summary": "Affected accounts span all tiers and three regions — not tier- or region-specific. Two of twelve are enterprise (a01, a09). [t231, t236]"
+      "tool": "search_ticket_history",
+      "input": {
+        "query": "checkout fails high value orders large amount transactions 500 timeout"
+      },
+      "result_summary": "[{\"id\": \"t238\", \"customer_id\": \"a06\", \"created_at\": \"2026-08-13T14:02:00Z\", \"subject\": \"Checkout failing for bulk electronics orders\", \"snippet\": \"Distributor orders above ¥150,000 error out at checkout. The browser console shows the request to /v2/transactions timing out after 30 seconds. Smaller c…"
     },
     {
       "n": 3,
-      "tool": "check_deploys",
-      "input": { "services": ["payments", "checkout"], "since": "2026-08-11T00:00:00Z" },
-      "result_summary": "Deploy d-3121 to payments-service shipped 2026-08-11 13:36Z — 38 minutes before the first report (t204 at 14:14Z). Description: 'card validation refactor'."
+      "tool": "get_account",
+      "input": {
+        "customer_id": "a10"
+      },
+      "result_summary": "{\"customer_id\": \"a10\", \"name\": \"Cardinal Foods\", \"tier\": \"enterprise\", \"region\": \"NA\", \"contract_value\": 190000}"
     },
     {
       "n": 4,
-      "tool": "search_ticket_history",
-      "input": { "query": "order amount threshold failed", "window_days": 3 },
-      "result_summary": "Every ticket that mentions an amount involves an order over $2,000 (t218: $2,400; t236: ~$2,000 threshold). Tickets below that amount: none found."
+      "tool": "get_account",
+      "input": {
+        "customer_id": "a01"
+      },
+      "result_summary": "{\"customer_id\": \"a01\", \"name\": \"Northwind Retail\", \"tier\": \"enterprise\", \"region\": \"NA\", \"contract_value\": 240000}"
     }
   ],
   "analysis": {
     "common": [
-      { "text": "All reports concern the checkout confirmation step failing; first report 38 minutes after deploy d-3121 to payments-service.", "cites": ["t204", "t218", "t231"], "tool": "check_deploys" },
-      { "text": "Every ticket that mentions an order amount involves an order over $2,000.", "cites": ["t218", "t236"], "tool": "search_ticket_history" }
+      {
+        "text": "Checkout fails only above a monetary threshold and succeeds below it — the single discriminating signature shared by every ticket in the cluster.",
+        "cites": [
+          "t223",
+          "t224",
+          "t226",
+          "t228",
+          "t230",
+          "t233",
+          "t238",
+          "t241",
+          "t243",
+          "t246"
+        ]
+      },
+      {
+        "text": "Failures concentrate on POST /v2/transactions: hard HTTP 500s in customer monitoring and 30-second request timeouts in the browser console.",
+        "cites": [
+          "t228",
+          "t238"
+        ]
+      },
+      {
+        "text": "Onset is the afternoon of 2026-08-11: first report says \"since about 2:15 this afternoon\", a second says \"started today\", and a third independently dates the 500s to \"Tuesday afternoon\".",
+        "cites": [
+          "t223",
+          "t224",
+          "t228"
+        ]
+      },
+      {
+        "text": "Small orders placed as controls succeed during the same window: a €40 test order, a 5-seat license purchase, \"smaller consumer orders\", and \"cheaper items\".",
+        "cites": [
+          "t224",
+          "t238",
+          "t241",
+          "t246"
+        ]
+      },
+      {
+        "text": "Failure occurs before any payment network is contacted — customer banks show no charge attempt at all, consistent with a pre-authorization screening step.",
+        "cites": [
+          "t226"
+        ]
+      },
+      {
+        "text": "Only one deploy in the pre-onset window semantically matches the symptom axis: d6 to payment-service, \"Enable enhanced fraud screening for high-value transactions\", shipped roughly 40 minutes before the first ticket.",
+        "cites": [
+          "d6",
+          "t223"
+        ]
+      },
+      {
+        "text": "Still active on day four with no mitigation, per the customer follow-up.",
+        "cites": [
+          "t248"
+        ]
+      }
     ],
     "varies": [
-      { "text": "Symptom differs by surface: server 500 with code PAY-5012, an infinite spinner, or a blank payment page.", "cites": ["t204", "t218", "t231"] },
-      { "text": "Browsers and platforms vary across reports; not client-specific.", "cites": ["t204", "t128"] }
+      {
+        "text": "Surfaced failure mode differs by report: error page, hard 500, 30-second timeout, white screen, and an infinite spinner — possibly one fault seen at different layers, possibly more than one.",
+        "cites": [
+          "t223",
+          "t228",
+          "t235",
+          "t238",
+          "t246"
+        ]
+      },
+      {
+        "text": "Currency differs across reports — USD, EUR and JPY thresholds all reported — and the JPY figure (¥150,000) sits roughly an order of magnitude away from the ~1,000-unit boundary seen in USD/EUR.",
+        "cites": [
+          "t223",
+          "t224",
+          "t233",
+          "t238",
+          "t243",
+          "t246"
+        ]
+      },
+      {
+        "text": "Order size varies from just over the boundary (about $1,000–$1,300) to five-figure B2B restock carts.",
+        "cites": [
+          "t230",
+          "t243",
+          "t246"
+        ]
+      },
+      {
+        "text": "Two tickets describe the failure without naming an amount (white screen; \"big landscaping quotes\"), so their threshold fit is inferred from order size language rather than a stated figure.",
+        "cites": [
+          "t235",
+          "t245"
+        ]
+      },
+      {
+        "text": "Segment varies: consumer retail, travel bookings, B2B distribution, school seat licenses, and trade quotes.",
+        "cites": [
+          "t223",
+          "t233",
+          "t238",
+          "t241",
+          "t245"
+        ]
+      },
+      {
+        "text": "Reported browsers vary — Chrome and Edge, Safari on iPhone and Firefox, Chrome and Safari.",
+        "cites": [
+          "t230",
+          "t233",
+          "t246"
+        ]
+      }
     ],
     "ruled_out": [
-      { "text": "Not tier- or region-specific — affected accounts span all tiers and three regions.", "cites": ["t231", "t236"], "tool": "get_account" },
-      { "text": "Not a long-standing issue — no similar reports in the four weeks before 2026-08-11.", "cites": ["t204"], "tool": "search_ticket_history" }
+      {
+        "text": "d5 (web-storefront seasonal theme/CSS refresh) is a poor fit: it shipped roughly two days before first report with no tickets in between, and an asset/CSS change does not produce server-side 500s or 30-second server timeouts.",
+        "cites": [
+          "d5",
+          "t228",
+          "t238"
+        ]
+      },
+      {
+        "text": "Client-side or browser-specific cause ruled out: failures reproduce across Chrome, Edge, Firefox and Safari (including Safari on iPhone).",
+        "cites": [
+          "t230",
+          "t233",
+          "t246"
+        ]
+      },
+      {
+        "text": "Genuine card declines ruled out: banks show no charge attempt at all, so the request never reaches the payment networks.",
+        "cites": [
+          "t226"
+        ]
+      },
+      {
+        "text": "Not a recurrence of a known issue: archive search returned only benign, unrelated older checkout tickets — a customization how-to, an expired discount code, and a rate-limit question. No prior instance of this signature.",
+        "cites": [
+          "t101",
+          "t107",
+          "t108"
+        ],
+        "tool": "search_ticket_history"
+      },
+      {
+        "text": "Analytics/reporting timeout tickets surfaced by the same search are excluded from this cluster: no payment path and no threshold behavior. They were not investigated and should be triaged separately.",
+        "cites": [
+          "t236",
+          "t240",
+          "t247"
+        ],
+        "tool": "search_ticket_history"
+      }
     ],
     "hypotheses": [
       {
-        "text": "Deploy d-3121 ('card validation refactor') broke confirmation for orders above roughly $2,000; the differing symptoms are three surfaces of the same backend failure.",
-        "cites": ["t204", "t218", "t236"],
-        "tool": "check_deploys",
-        "status": "unconfirmed",
-        "not_examined": "No access to code, server logs, or the deploy diff. The $2,000 threshold is inferred from two tickets that mention amounts; other tickets do not state order values."
+        "text": "The enhanced fraud screening enabled by d6 rejects or hangs on transactions above its high-value threshold, causing /v2/transactions to 500 or time out before authorization is attempted. Support: d6 shipped about 40 minutes before the first ticket, its description names the exact axis every ticket reports, and banks see no charge attempt.",
+        "cites": [
+          "d6",
+          "t223",
+          "t224",
+          "t226",
+          "t228"
+        ],
+        "not_examined": "No code, logs, or fraud-screening configuration were read; the trace attached to t228 was not opened; no rollback or mitigation test was performed."
+      },
+      {
+        "text": "The threshold is applied per-currency without FX normalization — a single numeric limit near 1,000 units applied to USD, EUR and JPY alike, which is why a ¥150,000 order (roughly $1,000 in scale terms is far below 150,000) trips the same limit as a $1,000 order.",
+        "cites": [
+          "t224",
+          "t233",
+          "t238",
+          "t243",
+          "t246"
+        ],
+        "not_examined": "No threshold configuration, FX conversion logic, or per-currency limit table was inspected; the inference rests entirely on amounts quoted in ticket text."
+      },
+      {
+        "text": "The mixed failure surfaces (hard 500 versus 30-second timeout versus endless spinner) are one upstream fault manifesting at different layers — a screening call that hangs, then either times out at the gateway or returns 500 depending on client and timeout settings.",
+        "cites": [
+          "t228",
+          "t238",
+          "t246",
+          "t235"
+        ],
+        "not_examined": "No gateway/service timeout settings, retry behavior, or request traces were reviewed; whether these are one fault or two was not confirmed."
+      },
+      {
+        "text": "Impact skews toward the highest-value orders, so revenue loss per failure far exceeds an average failed checkout, and at least one confirmed customer defection has already occurred.",
+        "cites": [
+          "t230",
+          "t235",
+          "t248"
+        ],
+        "not_examined": "No revenue or transaction telemetry was queried; the $18k figure is customer self-reported and unverified, and accounts a02–a09, a11, a12 were never looked up."
       }
     ]
   }
