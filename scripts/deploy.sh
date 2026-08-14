@@ -27,4 +27,5 @@ for f in fixtures/*.json; do
   sync_file "$f" "/workspace/$(basename "$f")"
 done
 
-daytona exec "$SANDBOX" -- 'pkill -f "node server.js" 2>/dev/null; cd /workspace && (nohup node server.js > /tmp/app.log 2>&1 &) && sleep 1 && node /workspace/healthcheck.js'
+# node:20-slim has no pkill/ps, so track the server with a PID file.
+daytona exec "$SANDBOX" -- 'kill $(cat /tmp/app.pid 2>/dev/null) 2>/dev/null; sleep 0.3; cd /workspace && (nohup node server.js > /tmp/app.log 2>&1 & echo $! > /tmp/app.pid) && sleep 1 && node /workspace/healthcheck.js && grep -c listening /tmp/app.log'

@@ -35,6 +35,7 @@ The frozen boundary between pipeline and app (see HANDOFF.md — changes require
 | `GET /api/clusters/:id/investigation` | Persisted investigation: `{ steps: [], analysis: {} }` |
 | `GET /api/clusters/:id/investigation/stream` | SSE; emits each step as an event, then `analysis`, then `done` |
 | `GET /api/clusters/:id/drafts` | Customer drafts, all `status: "pending_approval"` |
+| `GET /api/clusters/:id/packet` | Escalation packet (merged, cited bug report) |
 
 The SSE route replays persisted steps with a short delay between events when serving fixtures, so the streaming UI behaves identically on fixtures and live pipeline.
 

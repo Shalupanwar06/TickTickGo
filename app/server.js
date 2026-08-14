@@ -59,6 +59,9 @@ const server = http.createServer((req, res) => {
     m = p.match(/^\/api\/clusters\/([\w-]+)\/drafts$/);
     if (m) return json(res, fixture("drafts"));
 
+    m = p.match(/^\/api\/clusters\/([\w-]+)\/packet$/);
+    if (m) return json(res, fixture("packet"));
+
     if (p.startsWith("/api/")) return json(res, { error: "not found" }, 404);
 
     // Static files; SPA fallback to index.html.

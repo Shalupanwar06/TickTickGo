@@ -29,8 +29,8 @@ Update the right column as you go. This is the fastest way for either of you to 
 | Forge spec | You | done — `forge-spec.md` |
 | Daytona sandbox | You | done — sandbox `ticktickgo`, hello-world + fixture API live |
 | Cluster list screen | You | done — live on the sandbox, fixture-backed |
-| Cluster detail screen | You | not started |
-| Streaming trace | You | not started |
+| Cluster detail screen | You | done — trace, analysis, packet, drafts |
+| Streaming trace | You | done — SSE, verified 4 steps + analysis + done |
 | Snapshot + video backup | You | not started |
 
 ---

@@ -87,14 +87,173 @@ function renderList() {
   );
 }
 
+/* ---------- detail screen ---------- */
+
+function chips(ids) {
+  return (ids || [])
+    .map((id) => {
+      const t = state.tickets.get(id);
+      return `<span class="chip" title="${t ? esc(t.subject) : "ticket not in frontend fixture"}">${esc(id)}</span>`;
+    })
+    .join("");
+}
+
+// Hard rule 2: bullets without a ticket citation or a named tool result are
+// dropped by the renderer, not displayed. Do not relax this.
+function bullets(items) {
+  return (items || [])
+    .filter((b) => {
+      const ok = (b.cites && b.cites.length) || b.tool;
+      if (!ok) console.warn("Dropped uncited bullet:", b.text);
+      return ok;
+    })
+    .map(
+      (b) => `<li>${esc(b.text)} ${chips(b.cites)}${b.tool ? `<span class="chip chip-tool">${esc(b.tool)}</span>` : ""}</li>`
+    )
+    .join("");
+}
+
+function stepPanel(s) {
+  return `
+    <div class="step-panel">
+      <div class="step-head"><span class="step-n">${s.n}</span><code>${esc(s.tool)}</code><span class="step-input">${esc(JSON.stringify(s.input))}</span></div>
+      <div class="step-result">${esc(s.result_summary)}</div>
+    </div>`;
+}
+
+function analysisCard(a) {
+  const hyps = (a.hypotheses || [])
+    .map(
+      (h) => `
+      <div class="hypothesis">
+        <div class="hyp-head"><span class="badge badge-unconfirmed">Unconfirmed hypothesis</span></div>
+        <p>${esc(h.text)} ${chips(h.cites)}${h.tool ? `<span class="chip chip-tool">${esc(h.tool)}</span>` : ""}</p>
+        <p class="not-examined"><strong>Not examined:</strong> ${esc(h.not_examined)}</p>
+      </div>`
+    )
+    .join("");
+  return `
+    <section class="card analysis">
+      <h2>Analysis</h2>
+      <h3>Common to every report</h3><ul>${bullets(a.common)}</ul>
+      <h3>What varies</h3><ul>${bullets(a.varies)}</ul>
+      <h3>Already ruled out</h3><ul>${bullets(a.ruled_out)}</ul>
+      ${hyps}
+    </section>`;
+}
+
+function packetCard(p) {
+  return `
+    <section class="card">
+      <h2>Escalation packet</h2>
+      <h3>${esc(p.title)}</h3>
+      <p>${esc(p.impact)}</p>
+      <ul>${bullets(p.evidence)}</ul>
+      <p><strong>Suggested repro:</strong> ${esc(p.suggested_repro)}</p>
+      <p class="not-examined"><strong>Not examined:</strong> ${esc(p.not_examined)}</p>
+      <p class="merged-note">${esc(p.merged_note)}</p>
+    </section>`;
+}
+
+function draftsCard(d) {
+  const items = (d.drafts || [])
+    .map(
+      (dr) => `
+      <div class="draft">
+        <div class="draft-head">To customer <code>${esc(dr.customer_id)}</code> re ${chips([dr.ticket_id])}
+          <span class="badge badge-pending">${esc(dr.status)}</span></div>
+        <p>${esc(dr.body)}</p>
+      </div>`
+    )
+    .join("");
+  return `
+    <section class="card">
+      <h2>Customer drafts</h2>
+      <p class="note">Queued for approval — nothing sends from this tool.</p>
+      ${items}
+    </section>`;
+}
+
 function renderDetail(id) {
   const c = state.clusters.find((x) => x.id === id);
+  if (!c) {
+    app.innerHTML = `<a class="back-link" href="#/">&larr; All issues</a><div class="stub">Unknown cluster.</div>`;
+    return;
+  }
+  const known = c.ticket_ids.map((tid) => state.tickets.get(tid)).filter(Boolean);
   app.innerHTML = `
     <a class="back-link" href="#/">&larr; All issues</a>
-    <div class="stub">
-      <strong>${c ? esc(c.name) : "Unknown cluster"}</strong>
-      <p>Detail view lands next (H+2.5&ndash;H+4): member tickets, streaming investigation trace, cited analysis, packet &amp; drafts.</p>
-    </div>`;
+    <header class="detail-head">
+      <h1>${esc(c.name)}${isRising(c) ? '<span class="badge badge-rising">Rising</span>' : ""}</h1>
+      <p class="detail-meta"><strong>${c.customer_count}</strong> customers · ${c.ticket_ids.length} tickets · first seen ${relTime(c.first_seen)}</p>
+    </header>
+    <section class="card">
+      <h2>Tickets in this group</h2>
+      ${known
+        .map(
+          (t) => `<div class="ticket-line">${chips([t.id])}<span class="ticket-subject">${esc(t.subject)}</span><span class="ticket-meta">${esc(t.customer_id)} · ${relTime(t.created_at)}</span></div>`
+        )
+        .join("")}
+      ${c.ticket_ids.length > known.length ? `<p class="note">+ ${c.ticket_ids.length - known.length} more: ${chips(c.ticket_ids.filter((tid) => !state.tickets.get(tid)))}</p>` : ""}
+    </section>
+    <section class="card">
+      <h2>Investigation</h2>
+      <div id="trace"></div>
+      <button id="investigate" class="btn btn-primary">Investigate this cluster</button>
+    </section>
+    <div id="analysis-slot"></div>
+    <div id="actions" class="actions" hidden>
+      <button id="show-packet" class="btn">Escalation packet</button>
+      <button id="show-drafts" class="btn">Customer drafts</button>
+    </div>
+    <div id="packet-slot"></div>
+    <div id="drafts-slot"></div>`;
+
+  document.getElementById("investigate").addEventListener("click", () => investigate(id));
+  document.getElementById("show-packet").addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    const d = await fetch(`/api/clusters/${id}/packet`).then((r) => r.json());
+    document.getElementById("packet-slot").innerHTML = packetCard(d.packet);
+  });
+  document.getElementById("show-drafts").addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    const d = await fetch(`/api/clusters/${id}/drafts`).then((r) => r.json());
+    document.getElementById("drafts-slot").innerHTML = draftsCard(d);
+  });
+}
+
+const MAX_STEPS = 4; // hard rule 3 — the cap lives upstream, the UI never renders more
+
+function investigate(id) {
+  const btn = document.getElementById("investigate");
+  const trace = document.getElementById("trace");
+  btn.disabled = true;
+  btn.textContent = "Investigating…";
+  let steps = 0;
+
+  const es = new EventSource(`/api/clusters/${id}/investigation/stream`);
+  es.addEventListener("step", (ev) => {
+    if (steps >= MAX_STEPS) return;
+    steps++;
+    trace.insertAdjacentHTML("beforeend", stepPanel(JSON.parse(ev.data)));
+  });
+  es.addEventListener("analysis", (ev) => {
+    document.getElementById("analysis-slot").innerHTML = analysisCard(JSON.parse(ev.data));
+  });
+  es.addEventListener("done", () => {
+    es.close();
+    btn.remove();
+    document.getElementById("actions").hidden = false;
+  });
+  es.onerror = async () => {
+    // SSE failed — fall back to the persisted investigation in one shot.
+    es.close();
+    const inv = await fetch(`/api/clusters/${id}/investigation`).then((r) => r.json());
+    trace.innerHTML = inv.steps.slice(0, MAX_STEPS).map(stepPanel).join("");
+    document.getElementById("analysis-slot").innerHTML = analysisCard(inv.analysis);
+    btn.remove();
+    document.getElementById("actions").hidden = false;
+  };
 }
 
 function render() {

@@ -1,0 +1,17 @@
+{
+  "cluster_id": "c1",
+  "packet": {
+    "title": "Checkout confirmation fails for orders over ~$2,000 since deploy d-3121",
+    "impact": "12 distinct customers in 48 hours, including two enterprise accounts. Symptom varies by surface (500 w/ PAY-5012, infinite spinner, blank payment page) but all reports concern the confirmation step.",
+    "evidence": [
+      { "text": "First report at 2026-08-11T14:14Z — 38 minutes after deploy d-3121 ('card validation refactor') shipped to payments-service at 13:36Z.", "cites": ["t204"], "tool": "check_deploys" },
+      { "text": "Every ticket that states an order amount involves an order above roughly $2,000; no failing report mentions a smaller order. One customer reproduced the threshold directly with test orders.", "cites": ["t218", "t236"] },
+      { "text": "Client environment is not a factor: failures reported across Chrome/Windows and other browsers; symptoms differ but cluster in time.", "cites": ["t204", "t231"] },
+      { "text": "Error code PAY-5012 captured in one report's console — the only ticket containing a concrete error identifier.", "cites": ["t204"] },
+      { "text": "No similar reports in the four weeks prior; not tier- or region-specific (all tiers, three regions affected).", "cites": ["t231", "t236"], "tool": "get_account" }
+    ],
+    "suggested_repro": "Place an order above $2,000 and proceed to the confirmation step. Expect failure introduced after d-3121; orders below the threshold complete normally.",
+    "not_examined": "No access to code, server logs, or the d-3121 diff. The $2,000 threshold is inferred from the two tickets that mention amounts.",
+    "merged_note": "The amount threshold, the deploy timing, and the error code each appear in a different ticket — no single ticket contains this report."
+  }
+}
