@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .ai import MODEL, FIXTURE_DIR, _fixture_key, _get_client
+from .ai import MODEL, MESH_MODEL, USE_MESH, FIXTURE_DIR, _fixture_key, _get_client
 from .tools import TOOL_DEFINITIONS, execute_tool
 
 MAX_TOOL_CALLS = 4  # hard cap — do not raise
@@ -65,7 +65,8 @@ def investigate(corpus: dict, cluster: dict, on_step=None) -> dict:
         raise RuntimeError(f"FORCE_FIXTURES=1 but no investigation fixture ({fixture.name})")
 
     try:
-        return _live_run(corpus, cluster, user, fixture, fixture_key, on_step)
+        run = _live_run_mesh if USE_MESH else _live_run
+        return run(corpus, cluster, user, fixture, fixture_key, on_step)
     except Exception as exc:
         if fixture.exists():
             print(f"[investigator] live run failed ({exc}); replaying fixture")
@@ -147,6 +148,91 @@ def _live_run(corpus: dict, cluster: dict, user: str, fixture, fixture_key: str,
     fixture.write_text(json.dumps({"input_key": fixture_key, "output": record},
                                   indent=2, ensure_ascii=False))
     print(f"[investigator] live run ok: {calls_used} tool calls; fixture saved")
+    return record
+
+
+def _openai_tools() -> list[dict]:
+    """The same three hardcoded tools in OpenAI function-calling format (for Mesh)."""
+    return [
+        {"type": "function",
+         "function": {"name": t["name"], "description": t["description"],
+                      "parameters": t["input_schema"]}}
+        for t in TOOL_DEFINITIONS
+    ]
+
+
+def _live_run_mesh(corpus: dict, cluster: dict, user: str, fixture, fixture_key: str, on_step) -> dict:
+    """Same agent loop as _live_run, over Mesh's OpenAI-compatible API.
+
+    The hard 4-call counter is identical: the loop refuses to execute past the
+    cap and tells the model to report with what it has.
+    """
+    client = _get_client()
+    messages: list[dict] = [{"role": "system", "content": SYSTEM},
+                            {"role": "user", "content": user}]
+    steps: list[dict] = []
+    calls_used = 0
+    findings = ""
+
+    while True:
+        capped = calls_used >= MAX_TOOL_CALLS
+        response = client.chat.completions.create(
+            model=MESH_MODEL,
+            max_tokens=16000,
+            messages=messages,
+            tools=_openai_tools(),
+            tool_choice="none" if capped else "auto",
+        )
+        msg = response.choices[0].message
+        if msg.content:
+            findings = msg.content
+
+        if not msg.tool_calls:
+            break
+
+        messages.append({
+            "role": "assistant",
+            "content": msg.content,
+            "tool_calls": [
+                {"id": tc.id, "type": "function",
+                 "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                for tc in msg.tool_calls
+            ],
+        })
+        for tc in msg.tool_calls:
+            if calls_used >= MAX_TOOL_CALLS:
+                # Hard counter: the loop refuses to execute, regardless of what the model asked.
+                messages.append({"role": "tool", "tool_call_id": tc.id,
+                                 "content": "Tool budget exhausted (4 calls). Report your findings now."})
+                continue
+            calls_used += 1
+            tool_input = json.loads(tc.function.arguments or "{}")
+            result = execute_tool(corpus, tc.function.name, tool_input)
+            step = {
+                "step": calls_used,
+                "tool": tc.function.name,
+                "input": tool_input,
+                "result_summary": _summarize_result(result),
+                "result": result,
+            }
+            steps.append(step)
+            if on_step:
+                on_step(step)
+            messages.append({"role": "tool", "tool_call_id": tc.id,
+                             "content": json.dumps(result, ensure_ascii=False)})
+
+    record = {
+        "cluster_id": cluster["id"],
+        "cluster_name": cluster["name"],
+        "steps": steps,
+        "findings": findings,
+        "tool_calls_used": calls_used,
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    FIXTURE_DIR.mkdir(exist_ok=True)
+    fixture.write_text(json.dumps({"input_key": fixture_key, "output": record},
+                                  indent=2, ensure_ascii=False))
+    print(f"[investigator] live run ok (mesh): {calls_used} tool calls; fixture saved")
     return record
 
 
