@@ -14,11 +14,12 @@ A deterministic spine with exactly one agentic step inside it.
 
 ```
 ingest → group (AI) → rank (arithmetic) → [human selects] → investigate (agent) → packet (AI) → customer drafts (AI)
+      → fix (agent, sample app only) → device self-tests (deterministic) → PM approval (human)
 ```
 
-Grouping never varies, so it is not an agent. Ranking is counting. Only the investigation is agentic, because the right lookups genuinely differ per cluster.
+Grouping never varies, so it is not an agent. Ranking is counting. The investigation and the fix are agentic, because the right lookups/edits genuinely differ per cluster.
 
-Four AI calls total. Everything else is ordinary code. When something breaks, it is almost certainly in one of those four places.
+Five AI calls total. Everything else is ordinary code. When something breaks, it is almost certainly in one of those five places.
 
 ## Hard rules
 
@@ -32,6 +33,7 @@ These are not preferences. Breaking one of them breaks the product's core claim.
 6. **Bugs, not features.** The system never proposes building something. It surfaces problems that already have evidence.
 7. **Hypotheses are labelled as unconfirmed** and state what was not examined.
 8. **Synthetic demo data is labelled as synthetic in the UI.**
+9. **The fix agent patches only the sample storefront** (Meridian Supply Co., part of this demo) — write allowlist is exactly `storefront-fraud.js`, writes land in `*-fixed` copies (the broken original stays for before/after), tools operate on an in-memory overlay, a hard counter caps the loop at 6 calls, and the harness re-runs the check itself rather than trusting the model. It never touches the triage app, the ticket system, or any real repo.
 
 ## The AI calls
 
@@ -42,6 +44,8 @@ These are not preferences. Breaking one of them breaks the product's core claim.
 **3. Analysis.** Structured sections: common factors, variations, already ruled out, hypotheses. Every line carries ticket IDs or a named tool result.
 
 **4. Customer drafts.** One message per affected customer, referencing their own ticket and what they described. Personal, short, no marketing voice.
+
+**5. Fix agent.** Capped agent loop (read_file / write_file / run_check) over the sample storefront's fraud module. See hard rule 9 for the rails. Output: steps, unified diff, harness check verdict, patched copy.
 
 ## Data model
 
@@ -63,8 +67,9 @@ These are not preferences. Breaking one of them breaks the product's core claim.
 
 ## Don't
 
-- Don't add a third screen. Cluster list and cluster detail only.
+- Don't add a third *triage* screen. Cluster list and cluster detail only. (The storefront at `/storefront.html` is the sample app under test, not a triage screen. Superseded 14 Aug pm.)
 - Don't make grouping agentic. It has no branches.
 - Don't call real external services. Ticket history, accounts, and deploys are all local seed data.
-- Don't generate code fixes or touch a repo. Out of scope for this build.
+- Don't let the fix agent touch anything beyond the sample storefront's allowlist (hard rule 9). The old blanket "no code fixes" rule was superseded 14 Aug pm — the fix is now the demo's closing act, but only under those rails.
+- Don't put files in subdirectories of `app/public/` or `fixtures/` — deploy.sh globs are non-recursive; flat files only, or the sandbox silently misses them.
 - Don't let the demo run on localhost. It runs from the Daytona sandbox.

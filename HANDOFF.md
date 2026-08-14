@@ -34,6 +34,10 @@ Update the right column as you go. This is the fastest way for either of you to 
 | Wire frontend to pipeline | You | done — server prefers `out/` when present, maps shapes; `?source=fixtures` toggle; verified against pipeline-shaped test data |
 | Snapshot + video backup | You | blocked — current Daytona key lacks snapshot permission (Forbidden); video not recorded yet |
 | UI touches + improvements | Raushan | handed off — see "UI handoff to Raushan" below |
+| TTG-16 storefront (sample app) | Shalu | todo — fraud bug module already on main (`storefront-fraud.js`) |
+| TTG-17 fix agent + fix UI | Raushan (pipeline: DONE, live-verified) + Shalu (SSE route + fixCard) | pipeline half done — `fixtures/fix.json` + `storefront-fraud-fixed.js` on main |
+| TTG-18 device testing view | Shalu | todo |
+| TTG-19 PM approval | Shalu | todo |
 
 ---
 
@@ -53,7 +57,7 @@ These were argued through already. Don't relitigate them at hour five — that's
 
 **Customer count is the headline number, not ticket count.** Twelve customers reporting once is a worse problem than one customer reporting twelve times, and most support tools conflate them.
 
-**Two screens.** Cluster list, cluster detail. A third screen is scope creep wearing a disguise.
+**Two screens.** Cluster list, cluster detail. A third screen is scope creep wearing a disguise. *(Superseded 14 Aug pm by the full-loop restructure: the two-triage-screen rule stands, but the demo now also includes the Meridian Supply Co. storefront — the sample app under test — plus inline fix/test/approve extensions on the detail screen. See iteration.md TTG-16..19 and CLAUDE.md hard rule 9.)*
 
 ---
 
@@ -143,7 +147,9 @@ Both screens are built, fixture-backed, and live on the Daytona sandbox. Everyth
 
 ## Deliberately not built
 
-Feature generation. Repo access or MCP. Automated code fixes. Real CRM sending. Live ticket sync. Auth. Multi-tenancy. Anything past a few hundred tickets in a batch.
+Feature generation. Repo access or MCP. Real CRM sending. Live ticket sync. Auth. Multi-tenancy. Anything past a few hundred tickets in a batch.
+
+*(Superseded 14 Aug pm: "automated code fixes" — the fix agent now patches the sample storefront only, under CLAUDE.md hard rule 9's allowlist/copy/cap rails. Real-repo fixes remain out of scope and remain the roadmap line.)*
 
 Two of these have prepared answers if a judge asks:
 

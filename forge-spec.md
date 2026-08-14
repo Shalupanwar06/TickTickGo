@@ -36,6 +36,9 @@ The frozen boundary between pipeline and app (see HANDOFF.md — changes require
 | `GET /api/clusters/:id/investigation/stream` | SSE; emits each step as an event, then `analysis`, then `done` |
 | `GET /api/clusters/:id/drafts` | Customer drafts, all `status: "pending_approval"` |
 | `GET /api/clusters/:id/packet` | Escalation packet (merged, cited bug report) |
+| `GET /api/clusters/:id/fix` | Fix-agent record: `{cluster_id, steps:[{n,tool,input,result_summary}], summary, diff, check}` |
+| `GET /api/clusters/:id/fix/stream` | SSE; each `step` event, then `patch` (summary/diff/check), then `done` |
+| `GET\|POST /api/clusters/:id/approval` | In-memory PM decision; POST `{decision:"approved"\|"returned", note?}` → `{decision,note,at}`; GET defaults `{decision:"pending"}` |
 
 The SSE route replays persisted steps with a short delay between events when serving fixtures, so the streaming UI behaves identically on fixtures and live pipeline.
 
@@ -59,6 +62,18 @@ Top to bottom:
    - **Hypotheses** live in a visually separated box, labelled **Unconfirmed**, and end with a "Not examined:" line.
 5. **Actions:** two buttons — *Escalation packet* (renders the merged bug report) and *Customer drafts* (renders the queued drafts, each labelled `pending_approval`; there is no send button anywhere).
 
+## Screen 2 extensions — fix → test → approve (added 14 Aug pm)
+
+Progressive disclosure after the investigation completes, all inline on the detail screen:
+
+6. **Build a fix:** button streams the fix agent's steps (same panel component as the trace), then a fix card: summary · harness-check badge · unified diff with +/− coloring · links to `/storefront.html?fixed=1` (patched) vs `/storefront.html` (broken) for the before/after moment.
+7. **Test on devices:** three bezeled iframes — phone 375×667, tablet 768×1024, desktop 1280×800 — loading `/storefront.html?fixed=1&selftest=1&device=…`, scaled with `transform: scale()`. The storefront's self-test posts `{ttg:"selftest", device, results:[{name,pass}]}`; green/red badges render per device.
+8. **PM approval:** Approve fix / Return to devs (+ optional note) → POST to the approval route. Approve flips the drafts badge to **"released for send review"** (display-only — still no send button anywhere). State is in server memory and resets on restart, which is desirable between demo runs.
+
+## The sample app — Meridian Supply Co.
+
+`/storefront.html` (+ `storefront.css/js`, all **flat files in `app/public/` — deploy.sh globs are non-recursive, subdirectories silently fail to deploy**). A small storefront with its own branding where the bug lives: `storefront-fraud.js` throws for totals ≥ $1,000 ("deploy d6"). `?fixed=1` loads `storefront-fraud-fixed.js`, the fix agent's patched copy. Checkout failure shows a red banner and a prefilled "Report a problem" modal linking `/#/cluster/c1` — this is narratively where the corpus tickets came from.
+
 ## States
 
 - **Loading:** skeleton rows / panels.
@@ -68,4 +83,6 @@ Top to bottom:
 
 ## Explicit non-goals (do not build)
 
-Third screen · auth · live sync · sending anything · repo/MCP access · editing tickets. See PRD "Out of scope".
+Auth · live sync · sending anything · editing tickets · auto-applying patches (the fix agent writes only `*-fixed` copies of allowlisted sample-app files) · a real device farm (device testing = viewport iframes + in-page self-test). See PRD "Out of scope".
+
+*(Superseded 14 Aug pm: "third screen" — the storefront is the sample app under test, not a triage screen; "repo/MCP access" — the fix agent touches only the sample storefront via a hardcoded allowlist.)*
