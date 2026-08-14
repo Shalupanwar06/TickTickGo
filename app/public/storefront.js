@@ -91,7 +91,7 @@
     hideResults();
     try {
       var result = window.fraudCheck({ total: total });
-      el("sf-success-msg").textContent = "Order placed — " + money(total);
+      el("sf-success-msg").textContent = money(total);
       el("sf-success-review").hidden = !(result && result.requiresManualReview);
       el("sf-result-success").hidden = false;
     } catch (err) {
@@ -112,8 +112,95 @@
       "Nothing changed on our side.";
   }
 
-  function openModal() { el("sf-modal").hidden = false; }
-  function closeModal() { el("sf-modal").hidden = true; }
+  function openModal() { resetTicketStage(); el("sf-modal").hidden = false; }
+  function closeModal() { clearAnim(); el("sf-modal").hidden = true; }
+
+  // ---- Ticket generation animation ---------------------------------
+  // Stage classes on #sf-ticket-stage: st1 (card assembles, id scrambles,
+  // lines wipe in) -> st2 (checkmark draws, status types) -> st3 (glow
+  // pulse, actions slide up). Reduced motion: jump straight to final.
+
+  var TICKET_ID = "t251";
+  var STATUS_TEXT = "Routed to TickTickGo triage · matched to a known issue";
+  var animTimers = [];
+
+  function clearAnim() {
+    animTimers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    animTimers = [];
+  }
+
+  function resetTicketStage() {
+    clearAnim();
+    var stage = el("sf-ticket-stage");
+    stage.hidden = true;
+    stage.className = "sf-ticket-stage";
+    el("sf-ticket-id").textContent = TICKET_ID;
+    el("sf-ticket-status-text").textContent = "";
+    el("sf-modal-form").hidden = false;
+    el("sf-modal-form").classList.remove("sf-form-out");
+  }
+
+  function fillTicketCard() {
+    el("sf-ticket-subj-line").textContent = el("sf-ticket-subject").value;
+    var lines = el("sf-ticket-lines");
+    lines.innerHTML = "";
+    (el("sf-ticket-body").value.match(/[^.]+\.?/g) || []).forEach(function (s) {
+      var div = document.createElement("div");
+      div.className = "sf-ticket-line";
+      div.textContent = s.trim();
+      lines.appendChild(div);
+    });
+  }
+
+  function scrambleId() {
+    var chars = "abcdefx0123456789", idEl = el("sf-ticket-id"), tick = 0;
+    var iv = setInterval(function () {
+      tick++;
+      var s = "";
+      for (var i = 0; i < TICKET_ID.length; i++) {
+        s += tick > 12 + i * 3 ? TICKET_ID[i]
+          : chars[Math.floor(Math.random() * chars.length)];
+      }
+      idEl.textContent = s;
+      if (tick > 12 + TICKET_ID.length * 3) { idEl.textContent = TICKET_ID; clearInterval(iv); }
+    }, 38);
+    animTimers.push(iv);
+  }
+
+  function typeStatus() {
+    var out = el("sf-ticket-status-text"), i = 0;
+    var iv = setInterval(function () {
+      i++;
+      out.textContent = STATUS_TEXT.slice(0, i);
+      if (i >= STATUS_TEXT.length) clearInterval(iv);
+    }, 16);
+    animTimers.push(iv);
+  }
+
+  function fileTicket() {
+    var stage = el("sf-ticket-stage");
+    var form = el("sf-modal-form");
+    var reduced = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    fillTicketCard();
+    if (reduced) {
+      form.hidden = true;
+      stage.hidden = false;
+      stage.className = "sf-ticket-stage st1 st2 st3 sf-instant";
+      el("sf-ticket-status-text").textContent = STATUS_TEXT;
+      return;
+    }
+    form.classList.add("sf-form-out");
+    animTimers.push(setTimeout(function () {
+      form.hidden = true;
+      stage.hidden = false;
+      void stage.offsetWidth; // reflow so entrance animations run
+      stage.classList.add("st1");
+      scrambleId();
+    }, 240));
+    animTimers.push(setTimeout(function () { stage.classList.add("st2"); typeStatus(); }, 1600));
+    animTimers.push(setTimeout(function () { stage.classList.add("st3"); }, 2450));
+  }
 
   // ---- Self-test (?selftest=1) --------------------------------------
   // FROZEN CONTRACT: {ttg:"selftest", device, results:[{name, pass}]}
@@ -155,10 +242,129 @@
   el("sf-checkout").addEventListener("click", checkout);
   el("sf-report-open").addEventListener("click", openModal);
   el("sf-modal-close").addEventListener("click", closeModal);
+  el("sf-ticket-file").addEventListener("click", fileTicket);
+  el("sf-ticket-done").addEventListener("click", closeModal);
   el("sf-modal").addEventListener("click", function (e) {
     if (e.target === el("sf-modal")) closeModal();
   });
 
   if (params.get("fixed") === "1") el("sf-build-tag").hidden = false;
-  if (params.get("selftest") === "1") runSelfTest();
+  // Session mode wins when both params are present: the scripted session
+  // drives a real checkout, so the selftest must not double-fire.
+  if (params.get("selftest") === "1" && params.get("session") !== "1") runSelfTest();
+})();
+
+// ---- Scripted live session (?session=1) -----------------------------
+// Drives a visible checkout like a screen recording for the parent's
+// device/OS matrix: a simulated cursor adds the Pro Workstation Bench
+// ($1,249) and the LED Shop Light Bar ($89), places the $1,338 order,
+// and reports the outcome. Contract (parent matrix depends on it):
+//   step: {ttg:"session", profile, event:"step", step:{t, label}}
+//   done: {ttg:"session", profile, event:"done", verdict, checks, durationMs}
+(function () {
+  "use strict";
+
+  var params = new URLSearchParams(location.search);
+  if (params.get("session") !== "1") return;
+
+  var profile = params.get("profile") || params.get("device") || "unknown";
+  var clock = (window.performance && performance.now)
+    ? function () { return performance.now(); }
+    : function () { return Date.now(); };
+  var t0 = clock();
+  var now = function () { return Math.round(clock() - t0); };
+  var $ = function (id) { return document.getElementById(id); };
+
+  document.body.classList.add("sf-session");
+
+  var cx = window.innerWidth / 2, cy = 48;
+  var cursor = document.createElement("div");
+  cursor.className = "sf-cursor";
+  cursor.style.transform = "translate(" + cx + "px," + cy + "px)";
+  document.body.appendChild(cursor);
+
+  function post(msg) { parent.postMessage(msg, "*"); }
+
+  function step(label) {
+    post({
+      ttg: "session", profile: profile, event: "step",
+      step: { t: now(), label: label }
+    });
+  }
+
+  function moveTo(target) {
+    if (!target) return;
+    if (target.scrollIntoView) target.scrollIntoView({ block: "center" });
+    var r = target.getBoundingClientRect();
+    cx = r.left + r.width / 2;
+    cy = r.top + r.height / 2;
+    cursor.style.transform = "translate(" + cx + "px," + cy + "px)";
+  }
+
+  function clickAt(target) {
+    if (!target) return;
+    moveTo(target);
+    var ring = document.createElement("div");
+    ring.className = "sf-cursor-pulse";
+    ring.style.left = cx + "px";
+    ring.style.top = cy + "px";
+    document.body.appendChild(ring);
+    setTimeout(function () {
+      if (ring.parentNode) ring.parentNode.removeChild(ring);
+    }, 600);
+    target.click();
+  }
+
+  function addToCartButton(name) {
+    var cards = document.querySelectorAll("#sf-products .sf-card");
+    for (var i = 0; i < cards.length; i++) {
+      var h = cards[i].querySelector("h3");
+      if (h && h.textContent === name) return cards[i].querySelector("button.sf-btn");
+    }
+    return null;
+  }
+
+  function finish(pass) {
+    // The $40 check is computed silently — not part of the visible session.
+    var fortyPass = false;
+    try {
+      var r = window.fraudCheck({ total: 40 });
+      fortyPass = !!(r && r.approved);
+    } catch (e) { fortyPass = false; }
+    post({
+      ttg: "session", profile: profile, event: "done",
+      verdict: { pass: pass, label: "$1,300+ checkout" },
+      checks: [
+        { name: "$40 order", pass: fortyPass },
+        { name: "$1,300+ checkout", pass: pass }
+      ],
+      durationMs: now()
+    });
+  }
+
+  // Timeline (~3.9s). With prefers-reduced-motion the CSS transition is
+  // disabled so the cursor jumps instantly; steps keep the same t values.
+  step("Session start · " + profile);
+  setTimeout(function () { moveTo(addToCartButton("Pro Workstation Bench")); }, 250);
+  setTimeout(function () {
+    clickAt(addToCartButton("Pro Workstation Bench"));
+    step("Add to cart — Pro Workstation Bench $1,249.00");
+  }, 900);
+  setTimeout(function () { moveTo(addToCartButton("LED Shop Light Bar")); }, 1200);
+  setTimeout(function () {
+    clickAt(addToCartButton("LED Shop Light Bar"));
+    step("Add to cart — LED Shop Light Bar $89.00");
+  }, 1850);
+  setTimeout(function () { moveTo($("sf-cart-total")); }, 2150);
+  setTimeout(function () { moveTo($("sf-checkout")); }, 2750);
+  setTimeout(function () {
+    clickAt($("sf-checkout"));
+    step("Place order — $1,338.00 total");
+    // fraudCheck is synchronous: read which panel the real checkout showed.
+    var pass = !$("sf-result-success").hidden;
+    step(pass ? "✓ Order placed — $1,338.00"
+              : "✗ RISK_CHECK_TIMEOUT — checkout blocked");
+    moveTo(pass ? $("sf-result-success") : $("sf-result-failure"));
+    setTimeout(function () { finish(pass); }, 500);
+  }, 3400);
 })();

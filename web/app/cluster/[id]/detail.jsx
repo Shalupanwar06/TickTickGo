@@ -215,7 +215,7 @@ export default function Detail({ id }) {
         </div>
       )}
 
-      {showDevices && <DevicesCard />}
+      {showDevices && <DeviceMatrix />}
       {approval && <ApprovalCard approval={approval} onDecide={decide} />}
 
       {drafts && <DraftsCard drafts={drafts} released={released} />}
@@ -380,59 +380,210 @@ function Diff({ text = "" }) {
   );
 }
 
-const DEVICES = [
-  { key: "phone", label: "Phone · 375×667", w: 375, h: 667, scale: 0.5 },
-  { key: "tablet", label: "Tablet · 768×1024", w: 768, h: 1024, scale: 0.32 },
-  { key: "desktop", label: "Desktop · 1280×800", w: 1280, h: 800, scale: 0.26 },
+const PROFILES = [
+  { key: "iphone15", label: "iPhone 15 · iOS 17 · Safari", w: 393, h: 852, scale: 0.38, round: true },
+  { key: "pixel8", label: "Pixel 8 · Android 14 · Chrome", w: 412, h: 915, scale: 0.36, round: true },
+  { key: "ipad", label: "iPad Air · iPadOS · Safari", w: 820, h: 1180, scale: 0.22, round: true },
+  { key: "macbook", label: "MacBook · macOS · Chrome", w: 1280, h: 800, scale: 0.24, round: false },
+  { key: "windows", label: "Windows 11 · Edge", w: 1280, h: 800, scale: 0.24, round: false },
+  { key: "linux", label: "Ubuntu 22.04 · Firefox", w: 1280, h: 800, scale: 0.24, round: false },
 ];
 
-function DevicesCard() {
-  const [results, setResults] = useState({});
+const SESSION_TIMEOUT_MS = 20000;
+const fmtT = (ms) => `${(Math.max(0, ms || 0) / 1000).toFixed(1).padStart(4, "0")}s`;
+
+function DeviceMatrix() {
+  const [build, setBuild] = useState("patched");
+  const [run, setRun] = useState(0); // global remount counter (build toggle)
+  const [deviceRuns, setDeviceRuns] = useState({}); // per-device replay counters
+  const [sessions, setSessions] = useState({}); // {profile: {steps, verdict, durationMs, timedOut}}
+  const timersRef = useRef({});
+
+  // single window listener; sessions only, legacy selftest messages ignored
   useEffect(() => {
     const onMsg = (e) => {
-      if (e.data && e.data.ttg === "selftest") {
-        setResults((r) => ({ ...r, [e.data.device]: e.data.results }));
+      const d = e.data;
+      if (!d || d.ttg !== "session") return;
+      if (!PROFILES.some((p) => p.key === d.profile)) return;
+      if (d.event === "step" && d.step) {
+        setSessions((s) => {
+          const cur = s[d.profile] || { steps: [] };
+          if (cur.verdict) return s;
+          return { ...s, [d.profile]: { ...cur, steps: [...cur.steps, d.step] } };
+        });
+      } else if (d.event === "done" && d.verdict) {
+        clearTimeout(timersRef.current[d.profile]);
+        setSessions((s) => {
+          const cur = s[d.profile] || { steps: [] };
+          return {
+            ...s,
+            [d.profile]: { ...cur, verdict: d.verdict, durationMs: d.durationMs, timedOut: false },
+          };
+        });
       }
     };
     window.addEventListener("message", onMsg);
-    return () => window.removeEventListener("message", onMsg);
+    return () => {
+      window.removeEventListener("message", onMsg);
+      Object.values(timersRef.current).forEach(clearTimeout);
+    };
   }, []);
+
+  const armTimeout = (key) => {
+    clearTimeout(timersRef.current[key]);
+    timersRef.current[key] = setTimeout(() => {
+      setSessions((s) =>
+        s[key]?.verdict ? s : { ...s, [key]: { ...(s[key] || { steps: [] }), timedOut: true } },
+      );
+    }, SESSION_TIMEOUT_MS);
+  };
+
+  // arm all timeouts on mount and on every full remount (build toggle)
+  useEffect(() => {
+    PROFILES.forEach((p) => armTimeout(p.key));
+  }, [build, run]);
+
+  function switchBuild(next) {
+    if (next === build) return;
+    setSessions({});
+    setDeviceRuns({});
+    setBuild(next);
+    setRun((r) => r + 1);
+  }
+
+  function replay(key) {
+    setSessions((s) => {
+      const next = { ...s };
+      delete next[key];
+      return next;
+    });
+    setDeviceRuns((r) => ({ ...r, [key]: (r[key] || 0) + 1 }));
+    armTimeout(key);
+  }
+
+  const passed = PROFILES.filter((p) => sessions[p.key]?.verdict?.pass).length;
+  const failed = PROFILES.filter(
+    (p) => (sessions[p.key]?.verdict && !sessions[p.key].verdict.pass) || sessions[p.key]?.timedOut,
+  ).length;
+  const summaryCls =
+    passed === PROFILES.length ? "badge-ok" : failed > 0 ? "badge-fail" : "badge-muted";
+
   return (
     <section className="section">
-      <p className="sec-label">device verification · patched build, live self-tests</p>
-      <div className="device-row">
-        {DEVICES.map((d) => (
-          <div className="device" key={d.key}>
-            <div className="dlabel">
-              <span>{d.label}</span>
-              {results[d.key] ? (
-                <span className={`badge ${results[d.key].every((r) => r.pass) ? "badge-ok" : "badge-fail"}`}>
-                  {results[d.key].filter((r) => r.pass).length}/{results[d.key].length}
-                </span>
-              ) : (
-                <span className="badge badge-muted">running…</span>
-              )}
-            </div>
-            <div className="shell" style={{ width: d.w * d.scale, height: d.h * d.scale }}>
-              <iframe
-                title={d.key}
-                src={`/storefront.html?fixed=1&selftest=1&device=${d.key}`}
-                width={d.w}
-                height={d.h}
-                style={{ transform: `scale(${d.scale})` }}
-              />
-            </div>
-            <div className="dresults">
-              {(results[d.key] || []).map((r) => (
-                <span key={r.name} className={`badge ${r.pass ? "badge-ok" : "badge-fail"}`}>
-                  {r.pass ? "✓" : "✗"} {r.name}
-                </span>
-              ))}
-            </div>
-          </div>
+      <div className="matrix-head">
+        <div>
+          <p className="sec-label" style={{ margin: 0 }}>
+            device / os test matrix · live session recordings
+          </p>
+          <p className="matrix-note">
+            Patched should pass on every device; broken reproduces the failure everywhere — that’s
+            the point.
+          </p>
+        </div>
+        <div className="seg" role="group" aria-label="build under test">
+          <button className={build === "patched" ? "on" : ""} onClick={() => switchBuild("patched")}>
+            Patched build
+          </button>
+          <button className={build === "broken" ? "on" : ""} onClick={() => switchBuild("broken")}>
+            Broken build
+          </button>
+        </div>
+      </div>
+
+      <div className="matrix-summary">
+        <span className={`badge ${summaryCls}`}>
+          {passed}/{PROFILES.length} devices passed
+        </span>
+      </div>
+
+      <div className="matrix-grid">
+        {PROFILES.map((p) => (
+          <MatrixCell
+            key={`${p.key}-${build}-${run}-${deviceRuns[p.key] || 0}`}
+            p={p}
+            build={build}
+            runId={`${run}.${deviceRuns[p.key] || 0}`}
+            sess={sessions[p.key]}
+            onReplay={() => replay(p.key)}
+          />
         ))}
       </div>
     </section>
+  );
+}
+
+function MatrixCell({ p, build, runId, sess, onReplay }) {
+  const logRef = useRef(null);
+  const steps = sess?.steps || [];
+  const verdict = sess?.verdict;
+  const timedOut = sess?.timedOut && !verdict;
+  const running = !verdict && !timedOut;
+
+  useEffect(() => {
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [steps.length, verdict, timedOut]);
+
+  const src =
+    `/storefront.html?session=1&profile=${p.key}&device=${p.key}` +
+    (build === "patched" ? "&fixed=1" : "") +
+    `&run=${runId}`;
+
+  return (
+    <div className="mx-cell">
+      <div className="mx-head">
+        <span>{p.label}</span>
+        {running ? (
+          <span className="badge badge-rec">
+            <span className="dot" /> recording…
+          </span>
+        ) : timedOut ? (
+          <span className="badge badge-fail">✗ no response · timeout</span>
+        ) : (
+          <span className={`badge ${verdict.pass ? "badge-ok" : "badge-fail"}`}>
+            {verdict.pass ? "✓ passed" : "✗ failed"} · {((sess.durationMs || 0) / 1000).toFixed(1)}s
+          </span>
+        )}
+      </div>
+      <div
+        className={`shell mx-shell${p.round ? " mx-round" : ""}`}
+        style={{ width: p.w * p.scale, height: p.h * p.scale }}
+      >
+        <iframe
+          title={p.label}
+          src={src}
+          width={p.w}
+          height={p.h}
+          style={{ transform: `scale(${p.scale})` }}
+        />
+        {running && (
+          <span className="mx-rec">
+            <span className="dot" /> REC
+          </span>
+        )}
+      </div>
+      <div className="mx-timeline" ref={logRef}>
+        {steps.length === 0 && running && <div className="row wait">— waiting for session —</div>}
+        {steps.map((s, i) => (
+          <div className="row" key={i}>
+            <span className="t">{fmtT(s.t)}</span>
+            {s.label}
+          </div>
+        ))}
+        {verdict && (
+          <div className={`row ${verdict.pass ? "v-pass" : "v-fail"}`}>
+            <span className="t">{fmtT(sess.durationMs)}</span>
+            {verdict.pass ? "✓" : "✗"} {verdict.label}
+          </div>
+        )}
+        {timedOut && <div className="row v-fail">✗ no response within 20s</div>}
+      </div>
+      <div className="mx-foot">
+        <button className="btn" onClick={onReplay}>
+          ↺ Replay
+        </button>
+      </div>
+    </div>
   );
 }
 

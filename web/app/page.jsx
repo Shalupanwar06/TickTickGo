@@ -50,6 +50,7 @@ export default function Board() {
           that share no vocabulary, investigates the worst one, and hands engineering a fix — with
           a human signing off at the end.
         </p>
+        <FlowStepper />
         <div className="statrow">
           <Stat n={tickets.length || "—"} l="tickets in" />
           <Stat n={clusters.length} l="real problems" />
@@ -97,6 +98,33 @@ export default function Board() {
         </div>
       </section>
     </main>
+  );
+}
+
+const FLOW = [
+  { label: "Storefront issue", href: "/storefront.html" },
+  { label: "Ticket filed" },
+  { label: "Triaged", href: "#" },
+  { label: "Fix built" },
+  { label: "Verified on devices" },
+  { label: "Signed off" },
+];
+
+function FlowStepper() {
+  return (
+    <div className="flow-stepper" aria-label="How a report becomes a shipped fix">
+      {FLOW.map((s, i) => (
+        <span className="flow-node" key={s.label}>
+          {i > 0 && <span className="flow-line" aria-hidden="true" />}
+          <span className="fdot" aria-hidden="true" />
+          {s.href ? (
+            <a className="flabel" href={s.href}>{s.label}</a>
+          ) : (
+            <span className="flabel">{s.label}</span>
+          )}
+        </span>
+      ))}
+    </div>
   );
 }
 

@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meridian Supply Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/storefront.css">
 <script>
 // Pick the fraud module before storefront.js runs: ?fixed=1 loads the
@@ -17,7 +20,10 @@
 </head>
 <body>
 <header class="sf-topbar">
-  <div class="sf-brand">Meridian <span>Supply Co.</span></div>
+  <div class="sf-brand">
+    <span class="sf-eyebrow">Supplier Portal</span>
+    <span class="sf-brand-name">Meridian Supply&nbsp;Co.</span>
+  </div>
   <div class="sf-topbar-right">
     <span id="sf-build-tag" class="sf-tag sf-tag-patched" hidden>patched build</span>
     <span class="sf-tag sf-tag-synthetic" title="All products, prices, and orders on this page are generated">Synthetic demo data</span>
@@ -37,35 +43,65 @@
     <p id="sf-cart-empty" class="sf-cart-empty">Cart is empty.</p>
     <div class="sf-cart-total">
       <span>Total</span>
-      <strong id="sf-cart-total">$0.00</strong>
+      <strong id="sf-cart-total" class="sf-mono">$0.00</strong>
     </div>
     <button id="sf-checkout" class="sf-btn sf-btn-primary" disabled>Place order</button>
 
     <div id="sf-result-success" class="sf-banner sf-banner-success" hidden>
-      <strong id="sf-success-msg"></strong>
+      <span class="sf-pill sf-pill-accent">Order placed</span>
+      <strong id="sf-success-msg" class="sf-mono sf-success-total"></strong>
       <p id="sf-success-review" hidden>Flagged for standard risk review (no action needed).</p>
     </div>
     <div id="sf-result-failure" class="sf-banner sf-banner-failure" hidden>
-      <strong>Checkout failed</strong>
-      <p id="sf-failure-msg"></p>
-      <button id="sf-report-open" class="sf-btn sf-btn-danger">Report a problem</button>
+      <span class="sf-pill sf-pill-danger">Checkout failed</span>
+      <p id="sf-failure-msg" class="sf-mono"></p>
+      <button id="sf-report-open" class="sf-btn sf-btn-primary sf-btn-report">Report a problem</button>
     </div>
   </aside>
 </main>
 
 <div id="sf-modal" class="sf-modal-overlay" hidden>
   <div class="sf-modal" role="dialog" aria-modal="true" aria-labelledby="sf-modal-title">
-    <h3 id="sf-modal-title">Report a problem</h3>
-    <p class="sf-modal-hint">Preview of the ticket that would be sent to support:</p>
-    <label>Subject
-      <input id="sf-ticket-subject" type="text" readonly>
-    </label>
-    <label>Message
-      <textarea id="sf-ticket-body" rows="5" readonly></textarea>
-    </label>
-    <div class="sf-modal-actions">
-      <a class="sf-btn sf-btn-primary" href="/#/cluster/c1">See this issue in TickTickGo &rarr;</a>
-      <button id="sf-modal-close" class="sf-btn">Close</button>
+    <div id="sf-modal-form" class="sf-modal-form">
+      <h3 id="sf-modal-title">Report a problem</h3>
+      <p class="sf-modal-hint">Preview of the ticket that would be sent to support:</p>
+      <label>Subject
+        <input id="sf-ticket-subject" type="text" readonly>
+      </label>
+      <label>Message
+        <textarea id="sf-ticket-body" rows="5" readonly></textarea>
+      </label>
+      <div class="sf-modal-actions">
+        <button id="sf-ticket-file" class="sf-btn sf-btn-primary">File support ticket</button>
+        <button id="sf-modal-close" class="sf-btn sf-btn-ghost">Close</button>
+      </div>
+    </div>
+
+    <div id="sf-ticket-stage" class="sf-ticket-stage" hidden>
+      <div class="sf-ticket-card">
+        <div class="sf-ticket-head">
+          <span class="sf-ticket-label">Support ticket</span>
+          <span id="sf-ticket-id" class="sf-ticket-id sf-mono">t251</span>
+        </div>
+        <div id="sf-ticket-subj-line" class="sf-ticket-subject sf-ticket-line"></div>
+        <div id="sf-ticket-lines" class="sf-ticket-lines"></div>
+        <div class="sf-ticket-meta sf-mono">
+          <span>customer: you</span>
+          <span>filed: just now</span>
+          <span>queue: triage</span>
+        </div>
+        <div class="sf-ticket-status">
+          <svg class="sf-check" viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="14"></circle>
+            <path d="M10 16.8l4.2 4.2 8.3-9.4"></path>
+          </svg>
+          <span id="sf-ticket-status-text" class="sf-mono"></span>
+        </div>
+      </div>
+      <div class="sf-ticket-actions">
+        <a class="sf-btn sf-btn-primary" href="/#/cluster/c1">Follow it in TickTickGo &rarr;</a>
+        <button id="sf-ticket-done" class="sf-btn sf-btn-ghost">Done</button>
+      </div>
     </div>
   </div>
 </div>
