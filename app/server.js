@@ -234,7 +234,12 @@ const server = http.createServer((req, res) => {
     // Static files; SPA fallback to index.html.
     let file = path.normalize(path.join(PUBLIC, p === "/" ? "index.html" : p));
     if (!file.startsWith(PUBLIC) || !fs.existsSync(file)) file = path.join(PUBLIC, "index.html");
-    res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "text/plain" });
+    // no-store: we redeploy the same URLs all day — a stale cached app.js
+    // mid-demo is worse than re-downloading a few KB per load.
+    res.writeHead(200, {
+      "Content-Type": MIME[path.extname(file)] || "text/plain",
+      "Cache-Control": "no-store",
+    });
     res.end(fs.readFileSync(file));
   } catch (err) {
     console.error(err);
