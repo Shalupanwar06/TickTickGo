@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian Supply Co.</title>
+<link rel="stylesheet" href="/storefront.css">
+<script>
+// Pick the fraud module before storefront.js runs: ?fixed=1 loads the
+// agent-patched build, otherwise the deploy-d6 (broken) build.
+(function () {
+  var fixed = new URLSearchParams(location.search).get("fixed") === "1";
+  var src = fixed ? "/storefront-fraud-fixed.js" : "/storefront-fraud.js";
+  document.write('<script src="' + src + '"><\/script>');
+})();
+</script>
+</head>
+<body>
+<header class="sf-topbar">
+  <div class="sf-brand">Meridian <span>Supply Co.</span></div>
+  <div class="sf-topbar-right">
+    <span id="sf-build-tag" class="sf-tag sf-tag-patched" hidden>patched build</span>
+    <span class="sf-tag sf-tag-synthetic" title="All products, prices, and orders on this page are generated">Synthetic demo data</span>
+    <a class="sf-backlink" href="/#/">Back to TickTickGo &rarr;</a>
+  </div>
+</header>
+
+<main class="sf-main">
+  <section class="sf-shop">
+    <h1>Industrial supplies, shipped same day</h1>
+    <div id="sf-products" class="sf-grid"></div>
+  </section>
+
+  <aside class="sf-cart">
+    <h2>Your cart</h2>
+    <ul id="sf-cart-items" class="sf-cart-items"></ul>
+    <p id="sf-cart-empty" class="sf-cart-empty">Cart is empty.</p>
+    <div class="sf-cart-total">
+      <span>Total</span>
+      <strong id="sf-cart-total">$0.00</strong>
+    </div>
+    <button id="sf-checkout" class="sf-btn sf-btn-primary" disabled>Place order</button>
+
+    <div id="sf-result-success" class="sf-banner sf-banner-success" hidden>
+      <strong id="sf-success-msg"></strong>
+      <p id="sf-success-review" hidden>Flagged for standard risk review (no action needed).</p>
+    </div>
+    <div id="sf-result-failure" class="sf-banner sf-banner-failure" hidden>
+      <strong>Checkout failed</strong>
+      <p id="sf-failure-msg"></p>
+      <button id="sf-report-open" class="sf-btn sf-btn-danger">Report a problem</button>
+    </div>
+  </aside>
+</main>
+
+<div id="sf-modal" class="sf-modal-overlay" hidden>
+  <div class="sf-modal" role="dialog" aria-modal="true" aria-labelledby="sf-modal-title">
+    <h3 id="sf-modal-title">Report a problem</h3>
+    <p class="sf-modal-hint">Preview of the ticket that would be sent to support:</p>
+    <label>Subject
+      <input id="sf-ticket-subject" type="text" readonly>
+    </label>
+    <label>Message
+      <textarea id="sf-ticket-body" rows="5" readonly></textarea>
+    </label>
+    <div class="sf-modal-actions">
+      <a class="sf-btn sf-btn-primary" href="/#/cluster/c1">See this issue in TickTickGo &rarr;</a>
+      <button id="sf-modal-close" class="sf-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="/storefront.js"></script>
+</body>
+</html>

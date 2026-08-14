@@ -197,3 +197,81 @@ main { max-width: 880px; margin: 0 auto; padding: 1.6rem 1.2rem 3rem; }
   .cluster-row { grid-template-columns: minmax(0, 1fr) 90px; }
   .stat-tickets, .stat-seen { display: none; }
 }
+
+/* Fix agent — diff view */
+.diff {
+  background: #f8f9fb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  margin: 0.8rem 0;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #374151;
+}
+.diff span { display: block; white-space: pre; }
+.diff-add { background: #dcfce7; color: #166534; }
+.diff-del { background: #fee2e2; color: #991b1b; }
+.diff-hunk { color: var(--text-dim); }
+.check-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.6rem 0; }
+.card .actions { margin-bottom: 0; margin-top: 0.8rem; }
+a.btn { text-decoration: none; color: inherit; display: inline-block; }
+a.btn-primary { color: #fff; }
+
+/* Result / status badges */
+.badge-pass { background: #dcfce7; color: #166534; }
+.badge-fail { background: var(--rising-bg); color: var(--rising-fg); }
+.badge-approved { background: #dcfce7; color: #166534; }
+.badge-returned { background: var(--synthetic-bg); color: var(--synthetic-fg); }
+
+/* Device verification frames */
+.device-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+}
+.device { flex-shrink: 0; }
+.device-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+.device-frame {
+  overflow: hidden;
+  border: 3px solid #191c20;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.device-frame iframe {
+  border: none;
+  transform-origin: 0 0;
+  display: block;
+}
+.device-results {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* PM approval */
+.approval-note {
+  font: inherit;
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.2rem;
+}
+.approval-note:focus { outline: none; border-color: var(--accent); }
+.approval-at { color: var(--text-dim); font-size: 0.85rem; }

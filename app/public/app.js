@@ -233,9 +233,15 @@ function renderDetail(id) {
     <div id="actions" class="actions" hidden>
       <button id="show-packet" class="btn">Escalation packet</button>
       <button id="show-drafts" class="btn">Customer drafts</button>
+      <button id="build-fix" class="btn">Build a fix</button>
+      <button id="test-devices" class="btn" hidden>Test on devices</button>
+      <button id="pm-approval" class="btn" hidden>PM approval</button>
     </div>
     <div id="packet-slot"></div>
-    <div id="drafts-slot"></div>`;
+    <div id="drafts-slot"></div>
+    <div id="fix-slot"></div>
+    <div id="devices-slot"></div>
+    <div id="approval-slot"></div>`;
 
   document.getElementById("investigate").addEventListener("click", () => investigate(id));
   document.getElementById("show-packet").addEventListener("click", async (e) => {
@@ -247,6 +253,16 @@ function renderDetail(id) {
     e.target.disabled = true;
     const d = await fetch(`/api/clusters/${id}/drafts`).then((r) => r.json());
     document.getElementById("drafts-slot").innerHTML = draftsCard(d);
+  });
+  document.getElementById("build-fix").addEventListener("click", () => buildFix(id));
+  document.getElementById("test-devices").addEventListener("click", (e) => {
+    e.target.disabled = true;
+    ensureSelftestListener();
+    document.getElementById("devices-slot").innerHTML = devicesCard();
+  });
+  document.getElementById("pm-approval").addEventListener("click", (e) => {
+    e.target.disabled = true;
+    approvalCard(id);
   });
 }
 
@@ -282,6 +298,189 @@ function investigate(id) {
     btn.remove();
     document.getElementById("actions").hidden = false;
   };
+}
+
+/* ---------- fix agent ---------- */
+
+function buildFix(id) {
+  const btn = document.getElementById("build-fix");
+  const slot = document.getElementById("fix-slot");
+  btn.disabled = true;
+  btn.textContent = "Building fix…";
+  slot.innerHTML = `
+    <section class="card">
+      <h2>Fix agent</h2>
+      <div id="fix-trace"></div>
+      <div id="patch-slot"></div>
+    </section>`;
+  const trace = document.getElementById("fix-trace");
+  const reveal = () => {
+    btn.remove();
+    document.getElementById("test-devices").hidden = false;
+    document.getElementById("pm-approval").hidden = false;
+  };
+
+  const es = new EventSource(`/api/clusters/${id}/fix/stream`);
+  es.addEventListener("step", (ev) => {
+    trace.insertAdjacentHTML("beforeend", stepPanel(JSON.parse(ev.data)));
+  });
+  es.addEventListener("patch", (ev) => {
+    document.getElementById("patch-slot").innerHTML = fixCard(JSON.parse(ev.data));
+  });
+  es.addEventListener("done", () => {
+    es.close();
+    reveal();
+  });
+  es.onerror = async () => {
+    // SSE failed — fall back to the persisted fix in one shot.
+    es.close();
+    const fix = await fetch(`/api/clusters/${id}/fix`).then((r) => r.json());
+    trace.innerHTML = (fix.steps || []).map(stepPanel).join("");
+    document.getElementById("patch-slot").innerHTML = fixCard(fix);
+    reveal();
+  };
+}
+
+function diffHtml(diff) {
+  return String(diff || "")
+    .split("\n")
+    .map((line) => {
+      let cls = "";
+      if (line.startsWith("+++") || line.startsWith("---")) cls = "";
+      else if (line.startsWith("+")) cls = "diff-add";
+      else if (line.startsWith("-")) cls = "diff-del";
+      else if (line.startsWith("@@")) cls = "diff-hunk";
+      return `<span${cls ? ` class="${cls}"` : ""}>${esc(line)}</span>`;
+    })
+    .join("\n");
+}
+
+function fixCard(patch) {
+  const check = patch.check || { passed: false, cases: [] };
+  const cases = check.cases || [];
+  const passed = cases.filter((c) => c.pass).length;
+  const summaryBadge = `<span class="badge ${check.passed ? "badge-pass" : "badge-fail"}">${passed}/${cases.length} checks passed</span>`;
+  const caseBadges = cases
+    .map((c) => `<span class="badge ${c.pass ? "badge-pass" : "badge-fail"}">${c.pass ? "✓" : "✗"} ${esc(c.name)}</span>`)
+    .join(" ");
+  return `
+    <section class="card">
+      <h2>Proposed fix</h2>
+      <p>${esc(patch.summary)}</p>
+      <div class="check-row">${summaryBadge} ${caseBadges}</div>
+      <pre class="diff">${diffHtml(patch.diff)}</pre>
+      <div class="actions">
+        <a class="btn btn-primary" href="/storefront.html?fixed=1" target="_blank">View fixed storefront</a>
+        <a class="btn" href="/storefront.html" target="_blank">View broken original</a>
+      </div>
+    </section>`;
+}
+
+/* ---------- device verification ---------- */
+
+const DEVICES = [
+  { key: "phone", label: "Phone 375×667", w: 375, h: 667, scale: 0.42 },
+  { key: "tablet", label: "Tablet 768×1024", w: 768, h: 1024, scale: 0.26 },
+  { key: "desktop", label: "Desktop 1280×800", w: 1280, h: 800, scale: 0.2 },
+];
+
+function devicesCard() {
+  const frames = DEVICES.map((d) => {
+    const sw = Math.round(d.w * d.scale);
+    const sh = Math.round(d.h * d.scale);
+    return `
+      <div class="device">
+        <div class="device-label">${esc(d.label)}</div>
+        <div class="device-frame" style="width:${sw}px;height:${sh}px">
+          <iframe src="/storefront.html?fixed=1&amp;selftest=1&amp;device=${esc(d.key)}" width="${d.w}" height="${d.h}" style="transform:scale(${d.scale})" title="${esc(d.label)}"></iframe>
+        </div>
+        <div class="device-results" id="devres-${esc(d.key)}">running…</div>
+      </div>`;
+  }).join("");
+  return `
+    <section class="card">
+      <h2>Device verification — patched build</h2>
+      <div class="device-row">${frames}</div>
+    </section>`;
+}
+
+// Attached at most once for the page's lifetime; results rows are looked up
+// per message so re-renders of the devices card keep working.
+let selftestListenerAdded = false;
+function ensureSelftestListener() {
+  if (selftestListenerAdded) return;
+  selftestListenerAdded = true;
+  window.addEventListener("message", (e) => {
+    if (!e.data || e.data.ttg !== "selftest") return;
+    const row = document.getElementById(`devres-${e.data.device}`);
+    if (!row) return;
+    row.innerHTML = (e.data.results || [])
+      .map((r) => `<span class="badge ${r.pass ? "badge-pass" : "badge-fail"}">${r.pass ? "✓" : "✗"} ${esc(r.name)}</span>`)
+      .join(" ");
+  });
+}
+
+/* ---------- PM approval ---------- */
+
+async function approvalCard(id) {
+  const slot = document.getElementById("approval-slot");
+  slot.innerHTML = `<section class="card"><h2>PM sign-off</h2><p class="note">Loading…</p></section>`;
+  let cur = { decision: "pending" };
+  try {
+    cur = await fetch(`/api/clusters/${id}/approval`).then((r) => r.json());
+  } catch (err) {
+    console.error("Approval fetch failed:", err);
+  }
+  if (cur.decision && cur.decision !== "pending") {
+    approvalOutcome(cur);
+    return;
+  }
+  slot.innerHTML = `
+    <section class="card">
+      <h2>PM sign-off</h2>
+      <input id="approval-note" class="approval-note" type="text" placeholder="Optional note">
+      <div class="actions">
+        <button id="approve-fix" class="btn btn-primary">Approve fix</button>
+        <button id="return-fix" class="btn">Return to devs</button>
+      </div>
+    </section>`;
+  const decide = async (decision) => {
+    document.getElementById("approve-fix").disabled = true;
+    document.getElementById("return-fix").disabled = true;
+    const note = document.getElementById("approval-note").value.trim();
+    const res = await fetch(`/api/clusters/${id}/approval`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(note ? { decision, note } : { decision }),
+    }).then((r) => r.json());
+    approvalOutcome(res);
+  };
+  document.getElementById("approve-fix").addEventListener("click", () => decide("approved"));
+  document.getElementById("return-fix").addEventListener("click", () => decide("returned"));
+}
+
+function approvalOutcome(a) {
+  const slot = document.getElementById("approval-slot");
+  const at = a.at ? `<span class="approval-at">${esc(new Date(a.at).toLocaleString())}</span>` : "";
+  if (a.decision === "approved") {
+    slot.innerHTML = `
+      <section class="card">
+        <h2>PM sign-off</h2>
+        <p><span class="badge badge-approved">Approved</span> ${at}</p>
+      </section>`;
+    // Display-only text swap on any rendered drafts — no send affordance,
+    // nothing sends, no data mutation.
+    document.querySelectorAll("#drafts-slot .badge-pending").forEach((b) => {
+      b.textContent = "released for send review";
+    });
+  } else {
+    slot.innerHTML = `
+      <section class="card">
+        <h2>PM sign-off</h2>
+        <p><span class="badge badge-returned">Returned to devs</span> ${at}</p>
+        ${a.note ? `<p class="note">${esc(a.note)}</p>` : ""}
+      </section>`;
+  }
 }
 
 function render() {

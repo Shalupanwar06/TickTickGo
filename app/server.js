@@ -79,6 +79,24 @@ function pipelineInvestigation(id) {
   return { steps: mapSteps(inv.steps), analysis: mapAnalysis(outJson(`analysis_${id}.json`)) };
 }
 
+function pipelineFix(id) {
+  const f = outJson(`fix_${id}.json`);
+  if (!f) return null;
+  // Pipeline steps use "step" and carry extra keys (result, patched_content,
+  // tool_calls_used); map into the seam shape the UI expects.
+  return {
+    cluster_id: f.cluster_id || id,
+    steps: mapSteps(f.steps),
+    summary: f.summary,
+    diff: f.diff,
+    check: f.check,
+  };
+}
+
+/* ---- PM approval (in-memory; resets on restart, intentional for demo re-runs) ---- */
+
+const approvals = {};
+
 /* ---- server ---- */
 
 const server = http.createServer((req, res) => {
@@ -136,6 +154,62 @@ const server = http.createServer((req, res) => {
         if (fs.existsSync(f)) return json(res, { packet: { markdown: fs.readFileSync(f, "utf8") } });
       }
       return json(res, fixture("packet"));
+    }
+
+    m = p.match(/^\/api\/clusters\/([\w-]+)\/fix\/stream$/);
+    if (m) {
+      // SSE replay: one step at a time, then the patch, so the UI streams
+      // the same way whether the data is live pipeline output or fixture.
+      const fix =
+        (live && pipelineFix(m[1])) ||
+        (fs.existsSync(path.join(FIXTURES, "fix.json")) && fixture("fix"));
+      if (!fix) return json(res, { error: "not found" }, 404);
+      res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+      let i = 0;
+      const timer = setInterval(() => {
+        if (i < fix.steps.length) {
+          res.write(`event: step\ndata: ${JSON.stringify(fix.steps[i++])}\n\n`);
+        } else {
+          res.write(`event: patch\ndata: ${JSON.stringify({ summary: fix.summary, diff: fix.diff, check: fix.check })}\n\n`);
+          res.write("event: done\ndata: {}\n\n");
+          clearInterval(timer);
+          res.end();
+        }
+      }, 900);
+      req.on("close", () => clearInterval(timer));
+      return;
+    }
+
+    m = p.match(/^\/api\/clusters\/([\w-]+)\/fix$/);
+    if (m) {
+      const fix =
+        (live && pipelineFix(m[1])) ||
+        (fs.existsSync(path.join(FIXTURES, "fix.json")) && fixture("fix"));
+      return fix ? json(res, fix) : json(res, { error: "not found" }, 404);
+    }
+
+    m = p.match(/^\/api\/clusters\/([\w-]+)\/approval$/);
+    if (m) {
+      const id = m[1];
+      if (req.method === "GET") return json(res, approvals[id] || { decision: "pending" });
+      if (req.method === "POST") {
+        let body = "";
+        req.on("data", (chunk) => (body += chunk));
+        req.on("end", () => {
+          let parsed;
+          try {
+            parsed = JSON.parse(body);
+          } catch {
+            return json(res, { error: "invalid json" }, 400);
+          }
+          const { decision, note } = parsed || {};
+          if (decision !== "approved" && decision !== "returned") return json(res, { error: "bad decision" }, 400);
+          approvals[id] = { decision, note: String(note || ""), at: new Date().toISOString() };
+          return json(res, approvals[id]);
+        });
+        return;
+      }
+      return json(res, { error: "method not allowed" }, 405);
     }
 
     if (p.startsWith("/api/")) return json(res, { error: "not found" }, 404);

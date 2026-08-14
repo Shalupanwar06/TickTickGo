@@ -1,0 +1,202 @@
+/* Meridian Supply Co. — standalone storefront (synthetic demo).
+   Deliberately a different visual identity from the TickTickGo triage app:
+   deep forest green + warm neutrals, serif display headings. */
+:root {
+  --sf-bg: #faf7f2;
+  --sf-surface: #ffffff;
+  --sf-border: #e4ddd1;
+  --sf-ink: #24312a;
+  --sf-ink-dim: #6f7a70;
+  --sf-green: #1f4d3a;
+  --sf-green-dark: #163828;
+  --sf-amber: #b8860b;
+  --sf-success-bg: #e7f2e7;
+  --sf-success-fg: #1e5631;
+  --sf-danger-bg: #fbeae7;
+  --sf-danger-fg: #9c2f1e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", Verdana, sans-serif;
+  background: var(--sf-bg);
+  color: var(--sf-ink);
+}
+
+h1, h2, h3, .sf-brand {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.01em;
+}
+
+.sf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.9rem 1.4rem;
+  background: var(--sf-green);
+  color: #f3efe6;
+}
+.sf-brand { font-size: 1.25rem; font-weight: 700; }
+.sf-brand span { color: #d8c48a; }
+.sf-topbar-right { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; }
+.sf-backlink { color: #cfe0d4; font-size: 0.85rem; text-decoration: none; }
+.sf-backlink:hover { text-decoration: underline; }
+
+.sf-tag {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sf-tag-synthetic { background: #fef3c7; color: #92400e; }
+.sf-tag-patched { background: #d3e7d9; color: var(--sf-green-dark); }
+
+.sf-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.5rem;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.6rem 1.2rem 3rem;
+}
+.sf-shop h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+
+.sf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.sf-card {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.sf-card h3 { margin: 0; font-size: 1rem; }
+.sf-card .sf-sku { color: var(--sf-ink-dim); font-size: 0.78rem; }
+.sf-card .sf-price { font-weight: 700; color: var(--sf-green-dark); }
+.sf-card button { margin-top: auto; }
+
+.sf-cart {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  padding: 1.1rem;
+  align-self: start;
+}
+.sf-cart h2 { margin: 0 0 0.8rem; font-size: 1.15rem; }
+.sf-cart-items { list-style: none; margin: 0; padding: 0; }
+.sf-cart-items li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed var(--sf-border);
+  font-size: 0.88rem;
+}
+.sf-remove {
+  border: none;
+  background: none;
+  color: var(--sf-danger-fg);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.3rem;
+}
+.sf-cart-empty { color: var(--sf-ink-dim); font-size: 0.88rem; }
+.sf-cart-total {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.9rem 0;
+  font-size: 1.05rem;
+}
+
+.sf-btn {
+  border: 1px solid var(--sf-border);
+  border-radius: 6px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+.sf-btn:hover { border-color: var(--sf-green); }
+.sf-btn-primary { background: var(--sf-green); border-color: var(--sf-green); color: #f3efe6; width: 100%; }
+.sf-btn-primary:hover { background: var(--sf-green-dark); }
+.sf-btn-primary:disabled { opacity: 0.5; cursor: default; }
+.sf-btn-danger { background: var(--sf-danger-fg); border-color: var(--sf-danger-fg); color: #fff; margin-top: 0.6rem; }
+.sf-card .sf-btn { width: 100%; }
+
+.sf-banner { margin-top: 1rem; padding: 0.8rem; border-radius: 6px; font-size: 0.9rem; }
+.sf-banner p { margin: 0.4rem 0 0; }
+.sf-banner-success { background: var(--sf-success-bg); color: var(--sf-success-fg); border: 1px solid #bcd9bc; }
+.sf-banner-failure { background: var(--sf-danger-bg); color: var(--sf-danger-fg); border: 1px solid #efc4ba; }
+
+.sf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 32, 26, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.sf-modal {
+  background: var(--sf-surface);
+  border-radius: 8px;
+  padding: 1.3rem;
+  width: 100%;
+  max-width: 460px;
+}
+.sf-modal h3 { margin: 0 0 0.3rem; }
+.sf-modal-hint { color: var(--sf-ink-dim); font-size: 0.85rem; margin: 0 0 0.8rem; }
+.sf-modal label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.7rem; }
+.sf-modal input, .sf-modal textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.45rem;
+  border: 1px solid var(--sf-border);
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--sf-bg);
+  color: var(--sf-ink);
+  resize: vertical;
+}
+.sf-modal-actions { display: flex; gap: 0.6rem; margin-top: 0.9rem; flex-wrap: wrap; }
+.sf-modal-actions .sf-btn-primary { width: auto; }
+
+#sf-selftest {
+  position: fixed;
+  bottom: 0.7rem;
+  left: 0.7rem;
+  background: var(--sf-ink);
+  color: #f3efe6;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  z-index: 40;
+}
+
+[hidden] { display: none !important; }
+
+@media (max-width: 760px) {
+  .sf-main { grid-template-columns: 1fr; padding: 1.1rem 0.9rem 2.5rem; }
+  .sf-cart { order: 2; }
+  .sf-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .sf-shop h1 { font-size: 1.25rem; }
+}
