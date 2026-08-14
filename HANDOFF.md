@@ -20,12 +20,12 @@ Update the right column as you go. This is the fastest way for either of you to 
 
 | Piece | Owner | Status |
 |---|---|---|
-| Seed corpus | Raushan | not started |
-| Grouping call | Raushan | not started |
-| Ranking | Raushan | not started |
-| Investigator agent | Raushan | not started |
-| Analysis + packet | Raushan | not started |
-| Customer drafts | Raushan | not started |
+| Seed corpus | Raushan | done — `pipeline/data/`, invariants verified by `pipeline/checks.py` |
+| Grouping call | Raushan | code done — blocked on ANTHROPIC_API_KEY for live run |
+| Ranking | Raushan | done — emits the contract; verified against hand-labeled groups |
+| Investigator agent | Raushan | code done (3 tools, hard 4-call cap) — blocked on API key |
+| Analysis + packet | Raushan | code done (citation enforcement) — blocked on API key |
+| Customer drafts | Raushan | code done (pending_approval only) — blocked on API key |
 | Forge spec | You | done — `forge-spec.md` |
 | Daytona sandbox | You | done — sandbox `ticktickgo`, hello-world + fixture API live |
 | Cluster list screen | You | done — live on the sandbox, fixture-backed |

@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "tickets": [
+    { "id": "t101", "customer_id": "a02", "created_at": "2026-06-02T10:00:00Z", "subject": "Question about checkout customization", "body": "How do we add a custom field to the checkout form for gift messages?", "status": "resolved", "resolution": "How-to answered; no defect." },
+    { "id": "t102", "customer_id": "a05", "created_at": "2026-06-10T14:20:00Z", "subject": "Shipping label misprint", "body": "Labels printed with the wrong return address this morning.", "status": "resolved", "resolution": "Misconfigured warehouse profile; fixed by customer." },
+    { "id": "t103", "customer_id": "a01", "created_at": "2026-06-18T09:45:00Z", "subject": "Tax settings for Canada", "body": "Which tax profile should we use for shipments to Quebec?", "status": "resolved", "resolution": "Documentation link provided." },
+    { "id": "t104", "customer_id": "a07", "created_at": "2026-06-25T11:30:00Z", "subject": "Can't find order export", "body": "Where did the order export button move to after the redesign?", "status": "resolved", "resolution": "User education; button relocated in May redesign." },
+    { "id": "t105", "customer_id": "a10", "created_at": "2026-07-01T15:10:00Z", "subject": "Invoice address wrong", "body": "Our billing address changed and invoices still show the old one.", "status": "resolved", "resolution": "Billing profile updated." },
+    { "id": "t106", "customer_id": "a03", "created_at": "2026-07-08T10:25:00Z", "subject": "Slow image uploads", "body": "Product image uploads taking over a minute each since Monday.", "status": "resolved", "resolution": "CDN incident 2026-07-08; resolved by provider." },
+    { "id": "t107", "customer_id": "a11", "created_at": "2026-07-15T13:50:00Z", "subject": "Discount code not applying", "body": "Code SUMMER25 not applying at checkout for a customer.", "status": "resolved", "resolution": "Code had expired; working as intended." },
+    { "id": "t108", "customer_id": "a06", "created_at": "2026-07-20T16:05:00Z", "subject": "API rate limit question", "body": "What are the rate limits on the orders API for enterprise plans?", "status": "resolved", "resolution": "Limits documented and shared." },
+    { "id": "t109", "customer_id": "a09", "created_at": "2026-07-26T09:15:00Z", "subject": "Password policy question", "body": "Can we enforce 2FA for all staff accounts?", "status": "resolved", "resolution": "Feature exists; setup guide shared." },
+    { "id": "t110", "customer_id": "a12", "created_at": "2026-08-01T12:40:00Z", "subject": "How to add a second storefront", "body": "We're opening a second shop — can one account run two storefronts?", "status": "resolved", "resolution": "Multi-storefront guide shared." }
+  ]
+}

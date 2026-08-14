@@ -1,0 +1,17 @@
+{
+  "synthetic": true,
+  "accounts": [
+    { "customer_id": "a01", "name": "Northwind Retail", "tier": "enterprise", "region": "NA", "contract_value": 240000 },
+    { "customer_id": "a02", "name": "Brightline Travel", "tier": "business", "region": "EU", "contract_value": 60000 },
+    { "customer_id": "a03", "name": "Kessler Automotive", "tier": "enterprise", "region": "EU", "contract_value": 310000 },
+    { "customer_id": "a04", "name": "Plumeria Cosmetics", "tier": "starter", "region": "NA", "contract_value": 12000 },
+    { "customer_id": "a05", "name": "Tandem Outfitters", "tier": "business", "region": "NA", "contract_value": 48000 },
+    { "customer_id": "a06", "name": "Yamato Electronics", "tier": "enterprise", "region": "APAC", "contract_value": 275000 },
+    { "customer_id": "a07", "name": "Solstice Home", "tier": "starter", "region": "NA", "contract_value": 9000 },
+    { "customer_id": "a08", "name": "Ferro & Sons Hardware", "tier": "business", "region": "NA", "contract_value": 36000 },
+    { "customer_id": "a09", "name": "Lumen Learning", "tier": "business", "region": "EU", "contract_value": 54000 },
+    { "customer_id": "a10", "name": "Cardinal Foods", "tier": "enterprise", "region": "NA", "contract_value": 190000 },
+    { "customer_id": "a11", "name": "Atlas Fitness", "tier": "starter", "region": "APAC", "contract_value": 15000 },
+    { "customer_id": "a12", "name": "Verdant Gardens", "tier": "starter", "region": "EU", "contract_value": 11000 }
+  ]
+}

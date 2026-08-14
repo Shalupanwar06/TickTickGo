@@ -1,0 +1,13 @@
+{
+  "_note": "Hand-labeled ground truth for the seed corpus. TEST INPUT ONLY — never model output. Used to (a) verify corpus invariants, (b) drive ranking tests before grouping runs live, (c) score the live grouping call at the H+2.5 checkpoint.",
+  "no_shared_vocab_trio": ["t228", "t235", "t245"],
+  "top_cluster_deploy": "d6",
+  "groups": [
+    { "name": "Checkout fails on high-value orders", "ticket_ids": ["t223", "t224", "t226", "t228", "t230", "t233", "t235", "t238", "t241", "t243", "t245", "t246", "t248"] },
+    { "name": "Password reset emails never arrive", "ticket_ids": ["t208", "t212", "t217", "t220", "t227", "t231", "t234"] },
+    { "name": "Analytics dashboard timeouts", "ticket_ids": ["t213", "t216", "t221", "t236", "t240", "t247"] },
+    { "name": "CSV export garbles non-ASCII characters", "ticket_ids": ["t209", "t214", "t218", "t222", "t237"] },
+    { "name": "Mobile app randomly logs users out", "ticket_ids": ["t205", "t207", "t211", "t215", "t229", "t239", "t244"] }
+  ],
+  "ungrouped_ids": ["t201", "t202", "t203", "t204", "t206", "t210", "t219", "t225", "t232", "t242", "t249", "t250"]
+}
