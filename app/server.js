@@ -128,6 +128,10 @@ const server = http.createServer((req, res) => {
     m = p.match(/^\/api\/clusters\/([\w-]+)\/packet$/);
     if (m) {
       if (live) {
+        // Analysis emits a structured packet object; prefer it, fall back to
+        // the markdown file, then to the fixture.
+        const a = outJson(`analysis_${m[1]}.json`);
+        if (a && a.packet) return json(res, { packet: a.packet });
         const f = path.join(OUT, `packet_${m[1]}.md`);
         if (fs.existsSync(f)) return json(res, { packet: { markdown: fs.readFileSync(f, "utf8") } });
       }
