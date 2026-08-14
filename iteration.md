@@ -11,12 +11,12 @@ Statuses: ⬜ todo · 🟨 in progress · ✅ done · ⛔ blocked
 |---|---|---|---|
 | TTG-1 | Seed corpus — 50 tickets, 5 issues + one-offs, 12 accounts, deploy log | ✅ done | Non-obvious cluster of 3 tickets sharing no vocabulary exists; deploy d6 lands 38 min before top cluster's first ticket |
 | TTG-2 | Ingest + validation | ✅ done | 50 tickets load; count available for header; malformed data fails loud |
-| TTG-3 | Grouping call (AI #1) | ⛔ blocked: needs ANTHROPIC_API_KEY | One call, whole batch, JSON validated (every ticket ID exists in input); the 3 no-shared-vocab tickets land in one group |
+| TTG-3 | Grouping call (AI #1) | ✅ done | Live via Mesh: 5/5 clusters match ground truth exactly; no-vocab trio grouped; 12 one-offs ungrouped |
 | TTG-4 | Ranking (deterministic) | ✅ done | Emits the contract shape (clusters + ungrouped_ids); distinct customer count primary; clusters in impact order; all numbers rounded |
-| TTG-5 | Investigator agent (AI #2) — 3 tools, hard 4-step cap, streamed steps | 🟨 code done, ⛔ live run needs key | Deploy correlation surfaces without hardcoding; steps persist to `out/investigations.json` for replay; counter (not prompt) breaks the loop |
-| TTG-6 | Analysis + escalation packet (AI #3) | 🟨 code done, ⛔ live run needs key | Every bullet carries ticket-ID or tool-result citations (uncited dropped); hypotheses labelled unconfirmed + what wasn't examined; packet contains ≥1 fact present in no single ticket |
-| TTG-7 | Customer drafts (AI #4) | 🟨 code done, ⛔ live run needs key | 12 drafts, one per affected customer, referencing their own ticket; status `pending_approval`; ≥2 visibly different |
-| TTG-8 | Fixtures — save every good AI output keyed by input hash | 🟨 mechanism done | If API is slow/down, fixture serves; `FORCE_FIXTURES=1` runs fully offline |
+| TTG-5 | Investigator agent (AI #2) — 3 tools, hard 4-step cap, streamed steps | ✅ done | Live run: exactly 4 calls; d6 deploy correlation surfaced organically in step 1; trace persisted for replay |
+| TTG-6 | Analysis + escalation packet (AI #3) | ✅ done | Live run: 24/24 items cited; packet merged_note carries the emergent >$1k threshold fact — acceptance met |
+| TTG-7 | Customer drafts (AI #4) | ✅ done | Live run: 12/12 drafts, all pending_approval, visibly personalized |
+| TTG-8 | Fixtures — save every good AI output keyed by input hash | ✅ done | All 4 live outputs captured in pipeline/fixtures/; `FORCE_FIXTURES=1` demo fallback works offline |
 | TTG-15 | H+5 integration adapter (`pipeline/export_frontend.py`) + code-review fixes | ✅ done | Translates `out/*` into the 5 fixture files the frontend serves; 6 review findings fixed (tz-safe timestamps, tool-error recovery, truncation guard, validator recovery, cite/tool matching, empty-cluster guard); analysis now also emits the structured packet the UI needs |
 
 ## Shalu — app, platforms, demo
@@ -27,7 +27,7 @@ Statuses: ⬜ todo · 🟨 in progress · ✅ done · ⛔ blocked
 | TTG-10 | Cluster list screen (on fixtures) | ✅ done | Live on sandbox, fixture-backed |
 | TTG-11 | Cluster detail screen | ✅ done | Trace, analysis, packet, drafts |
 | TTG-12 | Streaming trace | ✅ done | SSE, verified 4 steps + analysis + done |
-| TTG-13 | Wire frontend to real pipeline (fixture path stays as toggle) | ⬜ todo | First end-to-end run at H+5 |
+| TTG-13 | Wire frontend to real pipeline (fixture path stays as toggle) | ✅ done | Real pipeline output exported + deployed; sandbox serves live results |
 | TTG-14 | Snapshot + video + rehearsal | ⬜ todo | Daytona snapshot the moment it works; full video recorded; rehearsed twice |
 
 ## Contract (frozen — both agree before changing)

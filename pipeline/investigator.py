@@ -183,7 +183,10 @@ def _live_run_mesh(corpus: dict, cluster: dict, user: str, fixture, fixture_key:
             tools=_openai_tools(),
             tool_choice="none" if capped else "auto",
         )
-        msg = response.choices[0].message
+        choice = response.choices[0]
+        if choice.finish_reason == "length":
+            raise RuntimeError("investigator: turn truncated at max_tokens — not trusting partial output")
+        msg = choice.message
         if msg.content:
             findings = msg.content
 
@@ -207,7 +210,15 @@ def _live_run_mesh(corpus: dict, cluster: dict, user: str, fixture, fixture_key:
                 continue
             calls_used += 1
             tool_input = json.loads(tc.function.arguments or "{}")
-            result = execute_tool(corpus, tc.function.name, tool_input)
+            try:
+                result = execute_tool(corpus, tc.function.name, tool_input)
+                # Mesh's upstream (Bedrock Converse) requires toolResult JSON to
+                # be an *object* — bare arrays are rejected with a 400. Wrap them.
+                payload = result if isinstance(result, dict) else {"results": result}
+                content = json.dumps(payload, ensure_ascii=False)
+            except Exception as exc:
+                result = f"Error: {exc}"
+                content = result  # plain text, not JSON — model can self-correct
             step = {
                 "step": calls_used,
                 "tool": tc.function.name,
@@ -221,7 +232,7 @@ def _live_run_mesh(corpus: dict, cluster: dict, user: str, fixture, fixture_key:
             # Mesh's upstream (Bedrock Converse) requires tool results to be
             # JSON objects, and our tools often return arrays — wrap them.
             messages.append({"role": "tool", "tool_call_id": tc.id,
-                             "content": json.dumps({"result": result}, ensure_ascii=False)})
+                             "content": content})
 
     record = {
         "cluster_id": cluster["id"],

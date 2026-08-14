@@ -1,0 +1,305 @@
+{
+  "input_key": "daae28eae94c",
+  "output": {
+    "common_factors": [
+      {
+        "text": "All reports describe failure at the final pay/Place Order step of checkout, never earlier in the flow.",
+        "cites": [
+          "t223",
+          "t235",
+          "t241",
+          "t245",
+          "t246"
+        ]
+      },
+      {
+        "text": "Failure is amount-dependent: orders above roughly four figures fail while smaller orders on the same integration succeed.",
+        "cites": [
+          "t224",
+          "t228",
+          "t233",
+          "t238",
+          "t241",
+          "t246"
+        ]
+      },
+      {
+        "text": "Onset clusters in the afternoon of 2026-08-11: first report says failures began \"about 2:15\" and was filed 14:14Z; independent monitoring confirms 500s \"since Tuesday afternoon.\"",
+        "cites": [
+          "t223",
+          "t228"
+        ]
+      },
+      {
+        "text": "Deploy d6 (payment-service, \"Enable enhanced fraud screening for high-value transactions\") shipped 2026-08-11T13:36Z, roughly 40 minutes before the first report, and its description names exactly the affected population.",
+        "cites": [
+          "d6",
+          "t223",
+          "search_ticket_history#1"
+        ]
+      },
+      {
+        "text": "The failing endpoint is POST /v2/transactions — returning 500s in one report and timing out at about 30 seconds in another.",
+        "cites": [
+          "t228",
+          "t238"
+        ]
+      },
+      {
+        "text": "Symptom spans at least four currencies (USD, EUR, JPY) and NA/EU/JP-facing merchants, so it is not region-locked.",
+        "cites": [
+          "t224",
+          "t226",
+          "t238",
+          "t243"
+        ]
+      },
+      {
+        "text": "Failures are still occurring on day four of the incident, with no self-reported recovery.",
+        "cites": [
+          "t243",
+          "t245",
+          "t246",
+          "t248"
+        ]
+      },
+      {
+        "text": "12 distinct customers reported independently within roughly 3 days, including two enterprise accounts sampled at about $240k and about $190k ACV.",
+        "cites": [
+          "t223",
+          "t230",
+          "search_ticket_history#3",
+          "search_ticket_history#4"
+        ]
+      }
+    ],
+    "variations": [
+      {
+        "text": "Two distinct failure shapes: fast failures (error page, HTTP 500, apparent decline) versus hangs (about 30-second timeout, endless spinner, white screen, \"nothing happens\").",
+        "cites": [
+          "t223",
+          "t226",
+          "t228",
+          "t235",
+          "t238",
+          "t241",
+          "t246"
+        ]
+      },
+      {
+        "text": "Threshold is reported in different units per merchant: about €1,000+ (bookings), about $1,000+ (gym equipment), about ¥150,000+ (distributor), and five-figure B2B carts.",
+        "cites": [
+          "t230",
+          "t233",
+          "t238",
+          "t243"
+        ]
+      },
+      {
+        "text": "Some merchants describe the failure as a card decline rather than an error, though banks show no charge attempt.",
+        "cites": [
+          "t226"
+        ]
+      },
+      {
+        "text": "One member ticket names no amount at all — its cluster membership is inferred from timing and stage-of-checkout only.",
+        "cites": [
+          "t235"
+        ]
+      },
+      {
+        "text": "Some tickets are B2B/quantity-driven (40+ seat licenses, quarterly restocks) rather than single high-priced items, but still cross the value threshold.",
+        "cites": [
+          "t230",
+          "t241"
+        ]
+      },
+      {
+        "text": "Reporting fidelity varies widely: monitoring/console-level detail in some tickets versus phone-call anecdotes in others.",
+        "cites": [
+          "t228",
+          "t238",
+          "t245"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "text": "Browser, device or client platform: failures reproduce on Chrome and Edge, on Safari/iPhone and Firefox, and on Chrome and Safari.",
+        "cites": [
+          "t230",
+          "t233",
+          "t246"
+        ]
+      },
+      {
+        "text": "Single-customer misconfiguration: 12 distinct merchants across multiple currency regions with no shared integration pattern, and one explicitly states nothing changed on their side.",
+        "cites": [
+          "t223",
+          "t224",
+          "t238"
+        ]
+      },
+      {
+        "text": "Genuine bank/issuer declines: banks show no charge attempt at all, so the failure happens before the card network is reached.",
+        "cites": [
+          "t226"
+        ]
+      },
+      {
+        "text": "Pre-existing/long-standing defect: history search returned no archived checkout-failure tickets; the archived checkout hits were a gift-message how-to, an expired discount code, and a rate-limit question, all resolved as non-defects.",
+        "cites": [
+          "search_ticket_history#2",
+          "t101",
+          "t107",
+          "t108"
+        ]
+      },
+      {
+        "text": "Deploy d5 (web-storefront seasonal theme/CSS refresh, 2026-08-09T11:20Z) as prime suspect: it shipped about 2 days earlier with no reports in the interim and is a presentation-layer change that cannot explain server-side 500s on POST /v2/transactions or amount-dependent behaviour.",
+        "cites": [
+          "d5",
+          "t228",
+          "search_ticket_history#1"
+        ]
+      },
+      {
+        "text": "Analytics/reporting timeouts surfaced by the same history search are outside this cluster (different surface, not checkout) and were not investigated.",
+        "cites": [
+          "t236",
+          "t240",
+          "t247",
+          "search_ticket_history#2"
+        ]
+      }
+    ],
+    "hypotheses": [
+      {
+        "text": "Deploy d6's enhanced fraud screening added a synchronous screening call on the high-value path, and that call errors or hangs — which would explain both the 500s and the ~30-second timeouts appearing only above the value threshold, starting ~40 minutes after the deploy.",
+        "cites": [
+          "d6",
+          "t223",
+          "t228",
+          "t238",
+          "t246"
+        ],
+        "not_examined": "No access to payment-service code, deploy diff, logs, or the trace attached to t228; the screening vendor's latency/error rate and any timeout configuration were not examined, and no deploys after 2026-08-11T15:00Z were queried."
+      },
+      {
+        "text": "The threshold appears to be applied after FX conversion at roughly 1,000 USD-equivalent, since the JPY boundary is about ¥150,000 (~$1,000) rather than a raw numeric 1,000 — suggesting a single currency-agnostic converted-amount rule rather than per-currency limits.",
+        "cites": [
+          "t224",
+          "t233",
+          "t238",
+          "t243",
+          "t246"
+        ],
+        "not_examined": "No access to the screening threshold configuration, FX conversion logic, or per-request amount logs; exact pass/fail boundary values per merchant were not confirmed beyond what tickets state."
+      },
+      {
+        "text": "The two failure shapes may be one mechanism at different latencies (fast reject vs. gateway/browser timeout) rather than two bugs — fast errors and hangs are reported by different merchants but never in a way that separates them by amount or region.",
+        "cites": [
+          "t223",
+          "t226",
+          "t228",
+          "t235",
+          "t238",
+          "t241",
+          "t246"
+        ],
+        "not_examined": "No server-side latency distribution, gateway timeout settings, or error-code breakdown were available; whether hung requests eventually create charges or orphaned transactions was not checked."
+      },
+      {
+        "text": "Some hung requests may leave shoppers uncertain whether they were charged, since at least one merchant's customers interpreted the failure as a decline — a possible double-charge/orphan-transaction exposure worth checking alongside the primary fix.",
+        "cites": [
+          "t226",
+          "t235",
+          "t246"
+        ],
+        "not_examined": "No transaction-ledger or reconciliation data was reviewed; no confirmation of whether any authorization was created for failed attempts."
+      }
+    ],
+    "packet": {
+      "title": "Checkout fails only on orders above roughly 1,000 USD-equivalent since payment-service deploy d6 (enhanced fraud screening), 2026-08-11T13:36Z",
+      "impact": "12 merchants, 13 tickets, 2026-08-11T14:14Z through 2026-08-14T11:05Z, all currently unresolved on day four (t248). Two sampled accounts are enterprise NA contracts worth about $240k (Northwind Retail, a01) and about $190k (Cardinal Foods, a10) — a10 has flagged P1 with revenue blocked (t230), a01 has filed twice and self-reports at least about $18k in abandoned carts (t223, t248). Affected merchants span NA, EU and JP-facing currencies (t224, t226, t238). Because the defect targets high-value orders specifically, revenue lost per failure is disproportionately large, and at least one confirmed sale went to a competitor (t235). ACV exposure is understated: 10 of 12 accounts were not pulled.",
+      "evidence": [
+        {
+          "text": "Deploy d6 (payment-service, \"Enable enhanced fraud screening for high-value transactions\") shipped 2026-08-11T13:36Z; first customer report says failures began \"about 2:15 this afternoon\" — roughly a 40-minute gap.",
+          "cites": [
+            "d6",
+            "t223",
+            "search_ticket_history#1"
+          ]
+        },
+        {
+          "text": "Independent monitoring corroboration: POST /v2/transactions returning 500s \"since Tuesday afternoon,\" and \"only requests above four figures seem affected.\"",
+          "cites": [
+            "t228"
+          ]
+        },
+        {
+          "text": "Paired same-merchant pass/fail tests isolate the variable to order value: €1,250 / €1,900 / €4,100 failed while a €40 test succeeded; above ¥150,000 fails while smaller consumer orders are unaffected; 40+ seat licenses fail while a 5-seat purchase succeeded; a $1,300 patio set fails while cheaper items go through.",
+          "cites": [
+            "t224",
+            "t238",
+            "t241",
+            "t246"
+          ]
+        },
+        {
+          "text": "Additional threshold data points: $1,600 and $2,050 orders, a $2,300 cart, five-figure B2B carts, bookings over €1,000, two orders over $1,000.",
+          "cites": [
+            "t223",
+            "t226",
+            "t230",
+            "t233",
+            "t243"
+          ]
+        },
+        {
+          "text": "Failure occurs before the card network: banks \"show no charge attempt at all\" despite customers seeing declines.",
+          "cites": [
+            "t226"
+          ]
+        },
+        {
+          "text": "Two observed shapes on the same endpoint — hard 500s versus about 30-second timeouts, endless spinners and white screens.",
+          "cites": [
+            "t228",
+            "t235",
+            "t238",
+            "t246"
+          ]
+        },
+        {
+          "text": "Not client-side: reproduced on Chrome and Edge, Safari/iPhone and Firefox, Chrome and Safari.",
+          "cites": [
+            "t230",
+            "t233",
+            "t246"
+          ]
+        },
+        {
+          "text": "Not pre-existing: no archived checkout-failure tickets; archived checkout hits were a gift-message how-to, an expired discount code and a rate-limit question, all non-defects.",
+          "cites": [
+            "search_ticket_history#2",
+            "t101",
+            "t107",
+            "t108"
+          ]
+        },
+        {
+          "text": "Weaker alternative deploy d5 (web-storefront seasonal CSS/theme, 2026-08-09T11:20Z) shipped about 2 days earlier with no reports in the interim and cannot explain server-side 500s or amount-dependent behaviour.",
+          "cites": [
+            "d5",
+            "t228"
+          ]
+        }
+      ],
+      "suggested_repro": "On any merchant storefront, build a cart just under and just over about 1,000 USD-equivalent and submit both through Place Order (POST /v2/transactions). Expect the sub-threshold order to succeed and the over-threshold order to either return HTTP 500 or hang for about 30 seconds and then time out with no charge attempt reaching the issuer (t224, t228, t238, t246). Repeat in a non-USD currency — e.g. about €1,000+ or about ¥150,000+ — to check whether the threshold is evaluated post-FX-conversion rather than on the raw numeric amount (t233, t238). Then re-run the same two carts with d6's enhanced fraud screening disabled; if the over-threshold order succeeds, the correlation is confirmed.",
+      "not_examined": "No code, logs, or deploy diff access; the trace attached to t228 was not read. Deploys after 2026-08-11T15:00Z were not queried, so we cannot say whether remediation or a further payment-service change has shipped (t248 suggests it has not). Accounts for 10 of 12 customers (a02–a09, a11, a12) were not pulled, so ACV exposure is understated. The fraud-screening vendor's latency/error rate, timeout configuration and threshold settings were not examined, nor was any transaction ledger checked for orphaned authorizations on hung requests. Root cause is unconfirmed — this is a timing and population correlation only. Concurrent analytics/reporting timeouts (t236, t240, t247) were not investigated and are treated as a separate incident.",
+      "merged_note": "No single ticket states the boundary, but read together the reported amounts converge on one number: the highest confirmed successes are about €40, a 5-seat licence and \"cheaper items\" (t224, t241, t246), while the lowest confirmed failures are about €1,000, about $1,000 and about $1,300 (t233, t243, t246). Critically, the JPY boundary is reported at about ¥150,000 — roughly $1,000 equivalent, not a raw numeric 1,000 (t238). Across four currencies the cutoff therefore sits at approximately 1,000 USD-equivalent, which implies a single currency-agnostic threshold evaluated after FX conversion. That converted-threshold shape is invisible in any one ticket and only appears when the USD, EUR and JPY reports are placed side by side (t224, t226, t233, t238, t243, t246)."
+    },
+    "packet_markdown": "# Checkout fails only on orders above roughly 1,000 USD-equivalent since payment-service deploy d6\n\n**Suspect deploy:** `d6` — payment-service, \"Enable enhanced fraud screening for high-value transactions\", shipped 2026-08-11T13:36Z\n**Cluster:** 13 tickets / 12 customers, 2026-08-11T14:14Z (`t223`) → 2026-08-14T11:05Z (`t248`), still open\n**Suggested severity:** P1 (customer-flagged, `t230`)\n\n## Impact\n\n- 12 merchants affected across NA, EU and JP-facing currencies (`t224`, `t226`, `t238`).\n- Two sampled accounts are enterprise NA contracts: **Northwind Retail** (`a01`) at about **$240k ACV** and **Cardinal Foods** (`a10`) at about **$190k ACV** (`search_ticket_history#3`, `search_ticket_history#4`).\n- `a10` has flagged P1 with quarterly-restock revenue blocked (`t230`). `a01` has filed twice and self-reports at least **about $18k** in abandoned carts over four days (`t223`, `t248`).\n- Because only **high-value** orders fail, revenue lost per failure is disproportionately large; at least one confirmed sale went to a competitor (`t235`).\n- ACV exposure is understated — accounts for 10 of 12 customers (a02–a09, a11, a12) were not pulled.\n\n## Evidence\n\n- **Timing.** `d6` shipped 13:36Z; first report describes failures starting \"about 2:15 this afternoon\" and was filed 14:14Z — roughly a 40-minute gap (`d6`, `t223`).\n- **Independent monitoring.** `POST /v2/transactions` returning 500s \"since Tuesday afternoon\"; \"only requests above four figures seem affected\" (`t228`).\n- **Paired pass/fail tests on the same integration and browser** isolate the variable to order value: €1,250 / €1,900 / €4,100 failed while a €40 test succeeded (`t224`); above ¥150,000 fails while smaller consumer orders are fine (`t238`); 40+ seat licences fail, a 5-seat purchase succeeded (`t241`); a $1,300 patio set fails, cheaper items go through (`t246`).\n- **Further threshold data points:** about $2,300 cart (`t223`), $1,600 and $2,050 (`t226`), five-figure B2B carts (`t230`), bookings over €1,000 (`t233`), two orders over $1,000 (`t243`).\n- **Failure precedes the card network.** Customers see declines but banks \"show no charge attempt at all\" (`t226`).\n- **Two failure shapes on the same endpoint:** hard 500s (`t228`) versus about 30-second timeouts (`t238`), endless spinner (`t246`), white screen (`t235`), \"nothing happens\" (`t241`).\n\n## Ruled out\n\n- **Browser / device / platform** — reproduced on Chrome + Edge (`t230`), Safari/iPhone + Firefox (`t233`), Chrome + Safari (`t246`).\n- **Per-merchant configuration** — 12 unrelated merchants, multiple currencies, one explicitly reports \"nothing changed on our side\" (`t223`, `t224`, `t238`).\n- **Real issuer declines** — no charge attempt reaches the bank (`t226`).\n- **Pre-existing defect** — no archived checkout-failure tickets; archived hits were a gift-message how-to (`t101`), an expired discount code (`t107`) and a rate-limit question (`t108`), all non-defects (`search_ticket_history#2`).\n- **Deploy `d5`** (web-storefront seasonal CSS/theme, 2026-08-09T11:20Z) — shipped about 2 days earlier with no reports in the interim; a presentation-layer change cannot produce server-side 500s on `POST /v2/transactions` (`d5`, `t228`).\n\n## Merged cross-ticket finding (not visible in any single ticket)\n\nNo ticket states the cutoff. But read together, the numbers converge. Highest confirmed **successes**: about €40 (`t224`), a 5-seat licence (`t241`), \"cheaper items\" (`t246`). Lowest confirmed **failures**: about €1,000 (`t233`), about $1,000 (`t243`), about $1,300 (`t246`). Decisively, the JPY boundary is reported at about **¥150,000 — roughly $1,000 equivalent, not a raw numeric 1,000** (`t238`).\n\nAcross USD, EUR and JPY the cutoff therefore sits at approximately **1,000 USD-equivalent**, implying a single currency-agnostic threshold evaluated **after FX conversion**. This shape only emerges when the multi-currency reports are read side by side (`t224`, `t226`, `t233`, `t238`, `t243`, `t246`).\n\n## Suggested repro\n\n1. On any storefront, submit two carts through Place Order (`POST /v2/transactions`): one just **under** and one just **over** about 1,000 USD-equivalent.\n2. Expect: sub-threshold succeeds; over-threshold returns HTTP 500 **or** hangs about 30 seconds and times out, with no charge attempt reaching the issuer (`t224`, `t228`, `t238`, `t246`).\n3. Repeat in a non-USD currency (about €1,000+ or about ¥150,000+) to confirm whether the threshold is applied post-FX-conversion rather than to the raw amount (`t233`, `t238`).\n4. Re-run both carts with `d6`'s enhanced fraud screening disabled. If the over-threshold order succeeds, the correlation is confirmed. A revert is the cheapest available experiment.\n\n## Not examined\n\n- No code, log or deploy-diff access; the trace attached to `t228` was not read.\n- Deploys after 2026-08-11T15:00Z were not queried — we cannot say whether remediation has shipped (`t248` suggests it has not).\n- Fraud-screening vendor latency/error rate, timeout settings and threshold configuration were not inspected.\n- No reconciliation check for orphaned authorizations or double-charges on hung requests (`t226`, `t235`).\n- Accounts for a02–a09, a11, a12 were not pulled.\n- Concurrent analytics/reporting timeouts (`t236`, `t240`, `t247`) are a separate surface and were not investigated.\n\n**This is a timing-and-population correlation, not a confirmed root cause.**"
+  }
+}
