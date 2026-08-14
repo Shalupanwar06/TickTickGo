@@ -30,6 +30,21 @@ Statuses: ⬜ todo · 🟨 in progress · ✅ done · ⛔ blocked
 | TTG-13 | Wire frontend to real pipeline (fixture path stays as toggle) | ✅ done | Real pipeline output exported + deployed; sandbox serves live results |
 | TTG-14 | Snapshot + video + rehearsal | ⬜ todo | Daytona snapshot the moment it works; full video recorded; rehearsed twice |
 
+## FULL-LOOP RESTRUCTURE (approved 14 Aug pm) — new tickets
+
+The demo becomes the full loop: sample enterprise app → tickets → triage → coding agent builds the fix → device testing → PM approval. This supersedes the "two screens" / "no code fixes" non-goals (docs being amended). Architecture + step details: see the plan summary in HANDOFF once amended; seams below are frozen.
+
+| ID | Ticket | Owner | Status | Acceptance |
+|---|---|---|---|---|
+| TTG-16 | Storefront "Meridian Supply Co." — `storefront.html/css/js` FLAT in `app/public/` (deploy.sh globs are non-recursive; no subdirs) + 2-link topbar nav in index.html. Fraud module `storefront-fraud.js` already provided (Raushan). Loader: `?fixed=1` → `storefront-fraud-fixed.js`. `runSelfTest()` gated on `?selftest=1` posts `{ttg:"selftest", device, results:[{name,pass}]}` to parent | Shalu | ⬜ todo | $40 order succeeds; $1,300 fails with red banner + "Report a problem" modal prefilled in corpus voice linking `/#/cluster/c1` |
+| TTG-17 | Fix agent (AI#5) `pipeline/fix_agent.py` + `fixtures/fix.json` export + `storefront-fraud-fixed.js`; server SSE route `GET /api/clusters/:id/fix/stream` (+ one-shot fallback) and `app.js` Build-fix button/`fixCard` are Shalu's halves | Raushan (pipeline) + Shalu (routes/UI) | 🟨 in progress | Streamed steps + ±diff render; `storefront.html?fixed=1` passes a $1,300 order |
+| TTG-18 | Device testing — `devicesCard()`: phone 375×667 / tablet 768×1024 / desktop 1280×800 iframes (`?fixed=1&selftest=1`), scaled, green/red badges from postMessage | Shalu | ⬜ todo | Three frames show 2/2 green on the sandbox preview URL |
+| TTG-19 | PM approval — in-memory `GET|POST /api/clusters/:id/approval` (`{decision:"approved"\|"returned", note?}` → `{decision,note,at}`, default pending) + `approvalCard()`; approve flips drafts badge to "released for send review" (display-only) | Shalu | ⬜ todo | Approve/return both render; nothing sends, ever |
+
+**Frozen seams:** fix record `{cluster_id, steps:[{n,tool,input,result_summary}], summary, diff, check:{passed,cases[]}}` in `fixtures/fix.json` / `out/fix_c1.json` · approval API above · selftest postMessage above. Change = both sign off.
+
+**New cut lines (in order):** device tests → approval note field → live fix run (hand-authored fixture instead) → storefront cart (single buy buttons).
+
 ## Contract (frozen — both agree before changing)
 
 `out/clusters.json`:
