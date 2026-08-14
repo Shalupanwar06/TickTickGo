@@ -105,7 +105,10 @@ def main():
     elif cmd == "all":
         cmd_group(corpus)
         cmd_rank(corpus)
-        top = _load("clusters.json")["clusters"][0]["id"]
+        clusters = _load("clusters.json")["clusters"]
+        if not clusters:
+            sys.exit("grouping produced no multi-ticket clusters — nothing to investigate")
+        top = clusters[0]["id"]
         print(f"\n=== investigating top cluster {top} ===")
         cmd_investigate(corpus, top)
         cmd_analyze(corpus, top)

@@ -63,10 +63,15 @@ def run_drafts(corpus: dict, cluster: dict, status_summary: str) -> dict:
     valid_pairs = {(t["customer_id"], t["id"]) for t in members}
     drafts, seen = [], set()
     for d in raw["drafts"]:
+        # Model judgment errors recover with a warning instead of killing the run
+        # (a raised error here would also poison the saved fixture).
         if (d["customer_id"], d["ticket_id"]) not in valid_pairs:
-            raise ValueError(f"draft references invalid customer/ticket pair: {d['customer_id']}/{d['ticket_id']}")
+            print(f"[drafts] WARN: invalid customer/ticket pair "
+                  f"{d['customer_id']}/{d['ticket_id']} — draft skipped")
+            continue
         if d["customer_id"] in seen:
-            raise ValueError(f"multiple drafts for customer {d['customer_id']}")
+            print(f"[drafts] WARN: extra draft for {d['customer_id']} — skipped")
+            continue
         seen.add(d["customer_id"])
         drafts.append({
             "cluster_id": cluster["id"],
@@ -77,6 +82,7 @@ def run_drafts(corpus: dict, cluster: dict, status_summary: str) -> dict:
         })
     missing = set(by_customer) - seen
     if missing:
-        raise ValueError(f"no draft generated for customers: {sorted(missing)}")
+        print(f"[drafts] WARN: no draft for customers {sorted(missing)} — "
+              f"{len(drafts)}/{len(by_customer)} generated")
     print(f"[drafts] {len(drafts)} drafts, all pending_approval")
     return {"cluster_id": cluster["id"], "drafts": drafts}

@@ -11,7 +11,12 @@ DEPLOY_FIELDS = {"id", "shipped_at", "service", "description"}
 
 
 def parse_ts(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        # Naive timestamps (e.g. a model-supplied "2026-08-11") are UTC, not
+        # host-local — astimezone() here would shift the deploy-correlation window.
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 def _load(name: str) -> dict:

@@ -38,9 +38,24 @@ ANALYSIS_SCHEMA = {
                 "additionalProperties": False,
             },
         },
+        "packet": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "impact": {"type": "string"},
+                "evidence": {"type": "array", "items": CITED_ITEM},
+                "suggested_repro": {"type": "string"},
+                "not_examined": {"type": "string"},
+                "merged_note": {"type": "string"},
+            },
+            "required": ["title", "impact", "evidence", "suggested_repro",
+                         "not_examined", "merged_note"],
+            "additionalProperties": False,
+        },
         "packet_markdown": {"type": "string"},
     },
-    "required": ["common_factors", "variations", "ruled_out", "hypotheses", "packet_markdown"],
+    "required": ["common_factors", "variations", "ruled_out", "hypotheses",
+                 "packet", "packet_markdown"],
     "additionalProperties": False,
 }
 
@@ -53,33 +68,52 @@ Hard rules:
   without valid citations are deleted by the renderer — an uncited claim is a wasted claim.
 - You have ticket text and tool results only. No code access. You cannot know root causes.
   Hypotheses are unconfirmed correlations; each must say what was NOT examined.
-- packet_markdown is a single engineering-ready bug report that merges detail across the
-  whole cluster. It must contain at least one fact that appears in no single ticket —
-  something only visible when the reports are read together (e.g. a threshold that emerges
-  across the reported amounts). Cite ticket IDs inline throughout. Keep it under a page.
+- The escalation packet comes in two forms carrying the same content:
+  * packet: structured — title (one line naming the bug), impact (who is affected: tiers,
+    regions, revenue at stake), evidence (cited facts, same citation rules as above),
+    suggested_repro (the most likely reproduction based on the tickets), not_examined
+    (what this analysis could not check), merged_note (THE cross-ticket fact: something
+    present in no single ticket that only appears when the reports are read together,
+    e.g. a threshold emerging across the reported amounts — cite the tickets it emerges from).
+  * packet_markdown: the same packet as a single engineering-ready markdown bug report,
+    under a page, with ticket IDs cited inline.
 - Round every number."""
 
 
-def _valid_cite(cite: str, valid_ids: set[str], step_count: int) -> bool:
+def _valid_cite(cite: str, valid_ids: set[str], steps: list[dict]) -> bool:
     if cite in valid_ids:
         return True
     m = re.fullmatch(r"(search_ticket_history|get_account|check_deploys)#(\d+)", cite)
-    return bool(m and 1 <= int(m.group(2)) <= step_count)
+    if not m:
+        return False
+    n = int(m.group(2))
+    # The named tool must actually be what ran at that step — a fabricated
+    # tool reference is not a citation.
+    return 1 <= n <= len(steps) and steps[n - 1]["tool"] == m.group(1)
 
 
-def enforce_citations(analysis: dict, valid_ids: set[str], step_count: int) -> dict:
+def _filter_items(items: list[dict], valid_ids: set[str], steps: list[dict],
+                  label: str) -> tuple[list[dict], int]:
+    kept, dropped = [], 0
+    for item in items:
+        cites = [c for c in item["cites"] if _valid_cite(c, valid_ids, steps)]
+        if cites:
+            item["cites"] = cites
+            kept.append(item)
+        else:
+            dropped += 1
+            print(f"[analysis] DROPPED uncited {label} item: {item['text'][:80]!r}")
+    return kept, dropped
+
+
+def enforce_citations(analysis: dict, valid_ids: set[str], steps: list[dict]) -> dict:
     dropped = 0
     for section in ("common_factors", "variations", "ruled_out", "hypotheses"):
-        kept = []
-        for item in analysis[section]:
-            cites = [c for c in item["cites"] if _valid_cite(c, valid_ids, step_count)]
-            if cites:
-                item["cites"] = cites
-                kept.append(item)
-            else:
-                dropped += 1
-                print(f"[analysis] DROPPED uncited {section} item: {item['text'][:80]!r}")
-        analysis[section] = kept
+        analysis[section], d = _filter_items(analysis[section], valid_ids, steps, section)
+        dropped += d
+    analysis["packet"]["evidence"], d = _filter_items(
+        analysis["packet"]["evidence"], valid_ids, steps, "packet evidence")
+    dropped += d
     if dropped:
         print(f"[analysis] {dropped} uncited item(s) dropped")
     return analysis
@@ -108,6 +142,6 @@ def run_analysis(corpus: dict, cluster: dict, investigation: dict) -> dict:
     valid_ids = ({t["id"] for t in corpus["tickets"]}
                  | {t["id"] for t in corpus["archive"]}
                  | {d["id"] for d in corpus["deploys"]})
-    analysis = enforce_citations(raw, valid_ids, len(investigation["steps"]))
+    analysis = enforce_citations(raw, valid_ids, investigation["steps"])
     analysis["cluster_id"] = cluster["id"]
     return analysis

@@ -17,6 +17,7 @@ Statuses: ⬜ todo · 🟨 in progress · ✅ done · ⛔ blocked
 | TTG-6 | Analysis + escalation packet (AI #3) | 🟨 code done, ⛔ live run needs key | Every bullet carries ticket-ID or tool-result citations (uncited dropped); hypotheses labelled unconfirmed + what wasn't examined; packet contains ≥1 fact present in no single ticket |
 | TTG-7 | Customer drafts (AI #4) | 🟨 code done, ⛔ live run needs key | 12 drafts, one per affected customer, referencing their own ticket; status `pending_approval`; ≥2 visibly different |
 | TTG-8 | Fixtures — save every good AI output keyed by input hash | 🟨 mechanism done | If API is slow/down, fixture serves; `FORCE_FIXTURES=1` runs fully offline |
+| TTG-15 | H+5 integration adapter (`pipeline/export_frontend.py`) + code-review fixes | ✅ done | Translates `out/*` into the 5 fixture files the frontend serves; 6 review findings fixed (tz-safe timestamps, tool-error recovery, truncation guard, validator recovery, cite/tool matching, empty-cluster guard); analysis now also emits the structured packet the UI needs |
 
 ## Shalu — app, platforms, demo
 
@@ -39,6 +40,11 @@ Statuses: ⬜ todo · 🟨 in progress · ✅ done · ⛔ blocked
 }
 ```
 `ticket_count` is derivable (`len(ticket_ids)`); trend is derivable from tickets + `ticket_ids`. If Shalu wants a `trend` field added, we agree first.
+
+## Integration notes (for H+5)
+
+- Run `python -m pipeline.run all`, then `python -m pipeline.export_frontend c1`, then `scripts/deploy.sh`. The adapter overwrites `fixtures/*.json` with real pipeline output — deploy clusters+tickets **together** (a mixed deploy shows broken ticket chips).
+- **Heads-up for Shalu:** `app/server.js` ignores the cluster `:id` on the investigation/packet/drafts routes — every cluster drills into the same detail data. Fine for the demo if we only click the top cluster; a ~5-line per-id lookup fixes it properly.
 
 ## Checkpoints
 - **H+2.5** — grouping works (TTG-3). If not, everyone stops.

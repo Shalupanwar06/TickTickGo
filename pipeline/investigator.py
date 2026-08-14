@@ -92,6 +92,8 @@ def _live_run(corpus: dict, cluster: dict, user: str, fixture, fixture_key: str,
         )
         if response.stop_reason == "refusal":
             raise RuntimeError(f"investigator: model refused ({response.stop_details})")
+        if response.stop_reason == "max_tokens":
+            raise RuntimeError("investigator: turn truncated at max_tokens — not trusting partial output")
 
         tool_uses = [b for b in response.content if b.type == "tool_use"]
         findings = "\n".join(b.text for b in response.content if b.type == "text") or findings
@@ -109,7 +111,15 @@ def _live_run(corpus: dict, cluster: dict, user: str, fixture, fixture_key: str,
                                 "is_error": True})
                 continue
             calls_used += 1
-            result = execute_tool(corpus, block.name, block.input)
+            try:
+                result = execute_tool(corpus, block.name, block.input)
+                is_error = False
+            except Exception as exc:
+                # A bad tool input (e.g. a non-ISO date) is the model's problem to
+                # correct, not a reason to kill the investigation. Still counts
+                # against the budget — the counter stays predictable.
+                result = f"Error: {exc}"
+                is_error = True
             step = {
                 "step": calls_used,
                 "tool": block.name,
@@ -121,7 +131,8 @@ def _live_run(corpus: dict, cluster: dict, user: str, fixture, fixture_key: str,
             if on_step:
                 on_step(step)
             results.append({"type": "tool_result", "tool_use_id": block.id,
-                            "content": json.dumps(result, ensure_ascii=False)})
+                            "content": result if is_error else json.dumps(result, ensure_ascii=False),
+                            "is_error": is_error})
         messages.append({"role": "user", "content": results})
 
     record = {

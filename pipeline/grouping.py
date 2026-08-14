@@ -53,13 +53,16 @@ def validate_groups(raw: dict, tickets: list[dict]) -> dict:
     seen: set[str] = set()
     groups = []
     for g in raw["groups"]:
-        ids = g["ticket_ids"]
-        for tid in ids:
+        ids = []
+        for tid in g["ticket_ids"]:
             if tid not in known:
                 raise ValueError(f"grouping returned unknown ticket id {tid!r}")
             if tid in seen:
-                raise ValueError(f"ticket {tid} appears in more than one group")
+                # Model judgment error, not corruption: keep the first placement.
+                print(f"[grouping] WARN: {tid} appears in multiple groups — keeping first placement")
+                continue
             seen.add(tid)
+            ids.append(tid)
         if len(ids) < 2:
             continue  # singleton groups dissolve into ungrouped
         groups.append({"name": g["name"].strip(), "ticket_ids": ids})
