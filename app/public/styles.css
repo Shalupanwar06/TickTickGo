@@ -32,6 +32,12 @@ body {
 .brand { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
 .brand span { color: var(--accent); }
 
+.brand-nav { display: flex; align-items: center; gap: 1.2rem; }
+.app-nav { display: flex; gap: 0.2rem; }
+.nav-link { color: var(--text-dim); text-decoration: none; font-size: 0.9rem; padding: 0.25rem 0.6rem; border-radius: 6px; }
+.nav-link:hover { color: var(--text); background: var(--bg); }
+.nav-active { color: var(--text); font-weight: 600; }
+
 .topbar-right { display: flex; align-items: center; gap: 0.8rem; }
 .batch-summary { color: var(--text-dim); font-size: 0.9rem; }
 
@@ -192,6 +198,7 @@ main { max-width: 880px; margin: 0 auto; padding: 1.6rem 1.2rem 3rem; }
 .draft-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.3rem; font-size: 0.85rem; color: var(--text-dim); }
 .badge-pending { background: #e0e7ff; color: #3730a3; margin-left: auto; }
 .draft p { margin: 0.3rem 0 0; line-height: 1.45; }
+
 
 @media (max-width: 640px) {
   .cluster-row { grid-template-columns: minmax(0, 1fr) 90px; }

@@ -34,10 +34,10 @@ Update the right column as you go. This is the fastest way for either of you to 
 | Wire frontend to pipeline | You | done — server prefers `out/` when present, maps shapes; `?source=fixtures` toggle; verified against pipeline-shaped test data |
 | Snapshot + video backup | You | blocked — current Daytona key lacks snapshot permission (Forbidden); video not recorded yet |
 | UI touches + improvements | Raushan | handed off — see "UI handoff to Raushan" below |
-| TTG-16 storefront (sample app) | Shalu | todo — fraud bug module already on main (`storefront-fraud.js`) |
-| TTG-17 fix agent + fix UI | Raushan (pipeline: DONE, live-verified) + Shalu (SSE route + fixCard) | pipeline half done — `fixtures/fix.json` + `storefront-fraud-fixed.js` on main |
-| TTG-18 device testing view | Shalu | todo |
-| TTG-19 PM approval | Shalu | todo |
+| TTG-16 storefront (sample app) | Shalu | done — Meridian storefront live; $1,300 fails on broken build, report modal links triage |
+| TTG-17 fix agent + fix UI | Raushan + Shalu | done — fix agent re-run live against real storefront files; SSE stream + fixCard with ±diff verified on sandbox |
+| TTG-18 device testing view | Shalu | done — 3 bezeled iframes, self-test postMessage badges |
+| TTG-19 PM approval | Shalu | done — in-memory approval API + card; approve flips drafts badge (display-only) |
 
 ---
 

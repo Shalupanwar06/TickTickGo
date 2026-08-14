@@ -2,10 +2,10 @@
 // The original (broken) module is left untouched for the before/after demo.
 // Meridian Supply Co. — payment fraud screening (SYNTHETIC DEMO CODE).
 // Shipped in deploy d6: "Enable enhanced fraud screening for high-value transactions".
-// Fix: deploy d6 routed orders at or above $1,000 to an extended-verification
-// endpoint that has since been decommissioned, so every high-value checkout threw.
-// High-value orders now complete STANDARD screening and are flagged for the risk
-// team via requiresManualReview instead of being routed off-box.
+// FIX: deploy d6 routed orders at or above $1,000 to an extended-verification
+// endpoint that has been decommissioned, so those checks always threw and
+// checkout failed. High-value orders now complete via STANDARD screening and
+// are flagged with requiresManualReview so the risk team still reviews them.
 (function () {
   "use strict";
 
@@ -14,11 +14,9 @@
   function fraudCheck(order) {
     var total = Number(order && order.total) || 0;
     if (total >= HIGH_VALUE_THRESHOLD) {
-      return {
-        approved: true,
-        screening: "standard",
-        requiresManualReview: true
-      };
+      // Extended verification is unavailable; fall back to standard screening
+      // and flag the order for manual risk review instead of failing checkout.
+      return { approved: true, screening: "standard", requiresManualReview: true };
     }
     return { approved: true, screening: "standard" };
   }

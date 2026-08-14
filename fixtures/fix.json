@@ -15,34 +15,26 @@
       "input": {
         "path": "storefront.js"
       },
-      "result_summary": "Error: storefront.js does not exist yet"
+      "result_summary": "/* Meridian Supply Co. — the sample app under test (synthetic).\n   The bug lives in storefront-fraud.js (deploy d6); ?fixed=1 loads the fix\n   agent's patched copy. ?selftest=1 runs checkout checks headlessly and posts\n   results to the parent frame for the device-testing view. */\n(function () {\n  \"…"
     },
     {
       "n": 3,
-      "tool": "read_file",
-      "input": {
-        "path": "storefront.html"
-      },
-      "result_summary": "Error: storefront.html does not exist yet"
-    },
-    {
-      "n": 4,
       "tool": "write_file",
       "input": {
         "path": "storefront-fraud.js",
-        "content": "<881 chars>"
+        "content": "<1009 chars>"
       },
-      "result_summary": "{\"written\": \"storefront-fraud.js\", \"bytes\": 881}"
+      "result_summary": "{\"written\": \"storefront-fraud.js\", \"bytes\": 1009}"
     },
     {
-      "n": 5,
+      "n": 4,
       "tool": "run_check",
       "input": {},
       "result_summary": "{\"passed\": true, \"cases\": [{\"name\": \"$40 order approved\", \"pass\": true, \"detail\": \"{\\\"approved\\\":true,\\\"screening\\\":\\\"standard\\\"}\"}, {\"name\": \"$1,300 order approved\", \"pass\": true, \"detail\": \"{\\\"approved\\\":true,\\\"screening\\\":\\\"standard\\\",\\\"requiresManualReview\\\":true}\"}]}"
     }
   ],
-  "summary": "Both smoke checks pass: the $40 order returns `{approved: true, screening: \"standard\"}` unchanged, and the $1,300 order now returns `{approved: true, screening: \"standard\", requiresManualReview: true}`.\n\nI replaced the `throw` in the `total >= HIGH_VALUE_THRESHOLD` branch — which routed high-value orders to the decommissioned extended-verification endpoint introduced in deploy d6 — with a standard-screening approval that carries `requiresManualReview: true`, so the risk team still reviews those orders. The sub-threshold path, the `$1,000` threshold constant, and the `window.fraudCheck` public API are untouched, keeping the patch to the single defective branch.\n\nOne caveat worth flagging to the escalation owners: the packet's merged note argues the real boundary is ~1,000 USD-*equivalent* post-FX (¥150,000 ≈ $1,000), but this module compares a raw `order.total` against a bare `1000`. I did not change that, since it's out of scope for this bug fix and the harness only covers USD cases — but if `order.total` arrives in the merchant's local currency, JPY and EUR orders will cross the manual-review threshold at the wrong point. That deserves a separate ticket with visibility into how `order.total` is populated.",
-  "diff": "--- a/storefront-fraud.js\n+++ b/storefront-fraud.js\n@@ -1,8 +1,9 @@\n // Meridian Supply Co. — payment fraud screening (SYNTHETIC DEMO CODE).\n // Shipped in deploy d6: \"Enable enhanced fraud screening for high-value transactions\".\n-// THE INTENTIONAL BUG lives here, isolated so the fix agent can patch it:\n-// orders at or above $1,000 are routed to an extended-verification endpoint\n-// that no longer exists, so the check throws and checkout fails.\n+// Fix: deploy d6 routed orders at or above $1,000 to an extended-verification\n+// endpoint that has since been decommissioned, so every high-value checkout threw.\n+// High-value orders now complete STANDARD screening and are flagged for the risk\n+// team via requiresManualReview instead of being routed off-box.\n (function () {\n   \"use strict\";\n \n@@ -11,12 +12,11 @@\n   function fraudCheck(order) {\n     var total = Number(order && order.total) || 0;\n     if (total >= HIGH_VALUE_THRESHOLD) {\n-      // deploy d6 routed high-value orders to extended verification; the\n-      // endpoint was decommissioned, so this path can never succeed.\n-      throw new Error(\n-        \"RISK_CHECK_TIMEOUT: extended verification endpoint unavailable \" +\n-        \"(introduced in deploy d6)\"\n-      );\n+      return {\n+        approved: true,\n+        screening: \"standard\",\n+        requiresManualReview: true\n+      };\n     }\n     return { approved: true, screening: \"standard\" };\n   }\n",
+  "summary": "Both checks pass.\n\n**What I changed and why:** In `storefront-fraud.js` I replaced the `throw` on the `total >= 1000` branch (deploy d6's route to the decommissioned extended-verification endpoint) with a normal approval that returns `{ approved: true, screening: \"standard\", requiresManualReview: true }`. High-value orders now clear checkout through standard screening while still being flagged for the risk team, and the sub-$1,000 return value is untouched so low-value behavior is byte-identical. The public API is unchanged — `window.fraudCheck(order)` remains the single synchronous export, and the storefront already renders \"(flagged for risk review)\" when `requiresManualReview` is set. Verification: `$40 order approved` and `$1,300 order approved` both pass.\n\nOne caveat worth flagging before this ships: the escalation packet's strongest cross-ticket finding was that the ~1,000 limit appears to be a **bare number applied per-currency without FX conversion** (¥150,000 failing is roughly an order of magnitude above the USD/EUR boundary). This patch does not address that, because it can't — this module receives an already-computed `order.total` with no currency field, so the FX question lives upstream in payment-service, outside the one file I'm allowed to write. My change makes every order above the numeric threshold succeed, which does unblock all the reported currencies, but it also means JPY carts around ¥1,000–¥150,000 (well under $1,000 in real value) will now be flagged for manual review unnecessarily. That's a false-positive load on the risk team, not a checkout failure, so it's the safe direction to fail — but someone should confirm the threshold is FX-normalized upstream before assuming the underlying limit is correct.\n\nTwo other things the packet listed as unexamined and that I did not verify: the t228 trace was never opened, so I'm treating \"the throw breaks checkout\" as the whole fault on the strength of the code I read, and I have not confirmed whether the reported 500s, 30-second timeouts, and infinite spinners are one fault or several. If the timeouts have a separate cause in the service layer, this fix will not resolve those tickets.",
+  "diff": "--- a/storefront-fraud.js\n+++ b/storefront-fraud.js\n@@ -1,8 +1,9 @@\n // Meridian Supply Co. — payment fraud screening (SYNTHETIC DEMO CODE).\n // Shipped in deploy d6: \"Enable enhanced fraud screening for high-value transactions\".\n-// THE INTENTIONAL BUG lives here, isolated so the fix agent can patch it:\n-// orders at or above $1,000 are routed to an extended-verification endpoint\n-// that no longer exists, so the check throws and checkout fails.\n+// FIX: deploy d6 routed orders at or above $1,000 to an extended-verification\n+// endpoint that has been decommissioned, so those checks always threw and\n+// checkout failed. High-value orders now complete via STANDARD screening and\n+// are flagged with requiresManualReview so the risk team still reviews them.\n (function () {\n   \"use strict\";\n \n@@ -11,12 +12,9 @@\n   function fraudCheck(order) {\n     var total = Number(order && order.total) || 0;\n     if (total >= HIGH_VALUE_THRESHOLD) {\n-      // deploy d6 routed high-value orders to extended verification; the\n-      // endpoint was decommissioned, so this path can never succeed.\n-      throw new Error(\n-        \"RISK_CHECK_TIMEOUT: extended verification endpoint unavailable \" +\n-        \"(introduced in deploy d6)\"\n-      );\n+      // Extended verification is unavailable; fall back to standard screening\n+      // and flag the order for manual risk review instead of failing checkout.\n+      return { approved: true, screening: \"standard\", requiresManualReview: true };\n     }\n     return { approved: true, screening: \"standard\" };\n   }\n",
   "check": {
     "passed": true,
     "cases": [
