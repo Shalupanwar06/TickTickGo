@@ -1,16 +1,29 @@
 // TickTickGo app server — no dependencies, port 3000.
-// Serves the SPA from public/ and the fixture-backed API.
+// Serves the SPA from public/ and the data API.
+//
+// Data source: if pipeline output (out/clusters.json) exists, serve the real
+// pipeline; otherwise serve the frontend fixtures. FIXTURES=1 (env) or
+// ?source=fixtures forces the fixture path — the demo-day fallback toggle.
+// Pipeline shapes are mapped to the UI shapes HERE so the UI never changes.
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
 const PORT = process.env.PORT || 3000;
+const PUBLIC = path.join(__dirname, "public");
+
 // Repo layout keeps fixtures in ../fixtures; the Daytona build context
 // flattens them next to server.js. Support both.
 const FIXTURES = [path.join(__dirname, "..", "fixtures"), __dirname].find(
   (d) => fs.existsSync(path.join(d, "clusters.json"))
 );
-const PUBLIC = path.join(__dirname, "public");
+// Same story for pipeline output and corpus (deploy.sh syncs them to
+// /workspace/out and /workspace/pipeline-data on the sandbox).
+const OUT = [path.join(__dirname, "..", "out"), path.join(__dirname, "out")].find(fs.existsSync);
+const CORPUS = [
+  path.join(__dirname, "..", "pipeline", "data", "tickets.json"),
+  path.join(__dirname, "pipeline-data", "tickets.json"),
+].find(fs.existsSync);
 
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
 
@@ -19,31 +32,81 @@ function json(res, obj, status = 200) {
   res.end(JSON.stringify(obj));
 }
 
-function fixture(name) {
-  return JSON.parse(fs.readFileSync(path.join(FIXTURES, name + ".json"), "utf8"));
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
 }
+
+function fixture(name) {
+  return readJson(path.join(FIXTURES, name + ".json"));
+}
+
+function usePipeline(url) {
+  if (process.env.FIXTURES === "1") return false;
+  if (url.searchParams.get("source") === "fixtures") return false;
+  return Boolean(OUT && fs.existsSync(path.join(OUT, "clusters.json")));
+}
+
+function outJson(name) {
+  const f = path.join(OUT, name);
+  return fs.existsSync(f) ? readJson(f) : null;
+}
+
+/* ---- pipeline → UI shape mapping ---- */
+
+function mapSteps(steps) {
+  return (steps || []).map((s) => ({
+    n: s.step,
+    tool: s.tool,
+    input: s.input,
+    result_summary: s.result_summary,
+  }));
+}
+
+function mapAnalysis(a) {
+  if (!a) return null;
+  return {
+    common: a.common_factors,
+    varies: a.variations,
+    ruled_out: a.ruled_out,
+    hypotheses: (a.hypotheses || []).map((h) => ({ ...h, status: "unconfirmed" })),
+  };
+}
+
+function pipelineInvestigation(id) {
+  const all = outJson("investigations.json");
+  const inv = all && all[id];
+  if (!inv) return null;
+  return { steps: mapSteps(inv.steps), analysis: mapAnalysis(outJson(`analysis_${id}.json`)) };
+}
+
+/* ---- server ---- */
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const p = url.pathname;
+  const live = usePipeline(url);
 
   try {
     if (p === "/api/health") return json(res, { ok: true, app: "ticktickgo" });
-    if (p === "/api/clusters") return json(res, fixture("clusters"));
-    if (p === "/api/tickets") return json(res, fixture("tickets"));
+    if (p === "/api/meta") return json(res, { source: live ? "pipeline" : "fixtures" });
+    if (p === "/api/clusters") return json(res, live ? outJson("clusters.json") : fixture("clusters"));
+    if (p === "/api/tickets") {
+      if (live && CORPUS) return json(res, readJson(CORPUS));
+      return json(res, fixture("tickets"));
+    }
 
     let m = p.match(/^\/api\/clusters\/([\w-]+)\/investigation\/stream$/);
     if (m) {
-      // SSE replay of the persisted investigation: one step at a time,
-      // then the analysis, so the UI streams the same way live or fixture.
-      const inv = fixture("investigation");
+      // SSE replay: one step at a time, then the analysis, so the UI streams
+      // the same way whether the data is live pipeline output or fixture.
+      const inv = (live && pipelineInvestigation(m[1])) || fixture("investigation");
       res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
       let i = 0;
       const timer = setInterval(() => {
         if (i < inv.steps.length) {
           res.write(`event: step\ndata: ${JSON.stringify(inv.steps[i++])}\n\n`);
         } else {
-          res.write(`event: analysis\ndata: ${JSON.stringify(inv.analysis)}\n\n`);
+          if (inv.analysis) res.write(`event: analysis\ndata: ${JSON.stringify(inv.analysis)}\n\n`);
           res.write("event: done\ndata: {}\n\n");
           clearInterval(timer);
           res.end();
@@ -54,13 +117,22 @@ const server = http.createServer((req, res) => {
     }
 
     m = p.match(/^\/api\/clusters\/([\w-]+)\/investigation$/);
-    if (m) return json(res, fixture("investigation"));
+    if (m) return json(res, (live && pipelineInvestigation(m[1])) || fixture("investigation"));
 
     m = p.match(/^\/api\/clusters\/([\w-]+)\/drafts$/);
-    if (m) return json(res, fixture("drafts"));
+    if (m) {
+      const d = live && outJson(`drafts_${m[1]}.json`);
+      return json(res, d || fixture("drafts"));
+    }
 
     m = p.match(/^\/api\/clusters\/([\w-]+)\/packet$/);
-    if (m) return json(res, fixture("packet"));
+    if (m) {
+      if (live) {
+        const f = path.join(OUT, `packet_${m[1]}.md`);
+        if (fs.existsSync(f)) return json(res, { packet: { markdown: fs.readFileSync(f, "utf8") } });
+      }
+      return json(res, fixture("packet"));
+    }
 
     if (p.startsWith("/api/")) return json(res, { error: "not found" }, 404);
 

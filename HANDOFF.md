@@ -31,7 +31,8 @@ Update the right column as you go. This is the fastest way for either of you to 
 | Cluster list screen | You | done — live on the sandbox, fixture-backed |
 | Cluster detail screen | You | done — trace, analysis, packet, drafts |
 | Streaming trace | You | done — SSE, verified 4 steps + analysis + done |
-| Snapshot + video backup | You | not started |
+| Wire frontend to pipeline | You | done — server prefers `out/` when present, maps shapes; `?source=fixtures` toggle; verified against pipeline-shaped test data |
+| Snapshot + video backup | You | blocked — current Daytona key lacks snapshot permission (Forbidden); video not recorded yet |
 | UI touches + improvements | Raushan | handed off — see "UI handoff to Raushan" below |
 
 ---

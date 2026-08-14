@@ -26,6 +26,15 @@ done
 for f in fixtures/*.json; do
   sync_file "$f" "/workspace/$(basename "$f")"
 done
+# Pipeline output + corpus, when they exist (post-integration).
+if [ -d out ]; then
+  for f in out/*; do
+    sync_file "$f" "/workspace/out/$(basename "$f")"
+  done
+fi
+if [ -f pipeline/data/tickets.json ]; then
+  sync_file pipeline/data/tickets.json /workspace/pipeline-data/tickets.json
+fi
 
 # node:20-slim has no pkill/ps, so track the server with a PID file.
 daytona exec "$SANDBOX" -- 'kill $(cat /tmp/app.pid 2>/dev/null) 2>/dev/null; sleep 0.3; cd /workspace && (nohup node server.js > /tmp/app.log 2>&1 & echo $! > /tmp/app.pid) && sleep 1 && node /workspace/healthcheck.js && grep -c listening /tmp/app.log'

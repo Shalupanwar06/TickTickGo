@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 330" font-family="-apple-system, 'Segoe UI', system-ui, sans-serif">
+  <rect width="960" height="330" fill="#ffffff"/>
+  <text x="80" y="34" font-size="18" font-weight="700" fill="#191c20">TickTickGo — build day swimlanes</text>
+
+  <!-- hour axis: x = 80 + h * 120 -->
+  <g font-size="12" fill="#6b7280" text-anchor="middle">
+    <text x="80" y="62">H+0</text><text x="200" y="62">H+1</text><text x="320" y="62">H+2</text>
+    <text x="440" y="62">H+3</text><text x="560" y="62">H+4</text><text x="680" y="62">H+5</text>
+    <text x="800" y="62">H+6</text><text x="920" y="62">H+7</text>
+  </g>
+  <g stroke="#e5e7eb" stroke-width="1">
+    <line x1="80" y1="70" x2="80" y2="240"/><line x1="200" y1="70" x2="200" y2="240"/>
+    <line x1="320" y1="70" x2="320" y2="240"/><line x1="440" y1="70" x2="440" y2="240"/>
+    <line x1="560" y1="70" x2="560" y2="240"/><line x1="680" y1="70" x2="680" y2="240"/>
+    <line x1="800" y1="70" x2="800" y2="240"/><line x1="920" y1="70" x2="920" y2="240"/>
+  </g>
+
+  <!-- Raushan lane -->
+  <text x="72" y="112" font-size="13" font-weight="600" fill="#1e3a8a" text-anchor="end">Raushan</text>
+  <g stroke="#2563eb" fill="#dbeafe">
+    <rect x="80" y="86" width="120" height="42" rx="6"/>
+    <rect x="200" y="86" width="240" height="42" rx="6"/>
+    <rect x="440" y="86" width="240" height="42" rx="6"/>
+    <rect x="680" y="86" width="120" height="42" rx="6"/>
+    <rect x="800" y="86" width="120" height="42" rx="6"/>
+  </g>
+  <g font-size="12.5" fill="#1e3a8a" text-anchor="middle" font-weight="600">
+    <text x="140" y="112">Seed corpus</text>
+    <text x="320" y="112">Grouping + ranking</text>
+    <text x="560" y="112">Investigator + tools</text>
+    <text x="740" y="112">Analysis</text>
+    <text x="860" y="112">Drafts</text>
+  </g>
+
+  <!-- App lane -->
+  <text x="72" y="182" font-size="13" font-weight="600" fill="#14532d" text-anchor="end">App</text>
+  <g stroke="#16a34a" fill="#dcfce7">
+    <rect x="80" y="156" width="120" height="42" rx="6"/>
+    <rect x="200" y="156" width="180" height="42" rx="6"/>
+    <rect x="380" y="156" width="180" height="42" rx="6"/>
+    <rect x="560" y="156" width="120" height="42" rx="6"/>
+    <rect x="680" y="156" width="120" height="42" rx="6"/>
+    <rect x="800" y="156" width="120" height="42" rx="6"/>
+  </g>
+  <g font-size="12.5" fill="#14532d" text-anchor="middle" font-weight="600">
+    <text x="140" y="182">Forge + Daytona</text>
+    <text x="290" y="182">Cluster list</text>
+    <text x="470" y="182">Detail view</text>
+    <text x="620" y="182">Streaming</text>
+    <text x="740" y="182">Wire-up</text>
+    <text x="860" y="182">Rehearse</text>
+  </g>
+
+  <!-- checkpoints -->
+  <g stroke="#b91c1c" stroke-width="2" stroke-dasharray="5 4">
+    <line x1="380" y1="76" x2="380" y2="248"/>
+    <line x1="680" y1="76" x2="680" y2="248"/>
+    <line x1="860" y1="76" x2="860" y2="248"/>
+  </g>
+  <g font-size="11.5" fill="#b91c1c" text-anchor="middle" font-weight="600">
+    <text x="380" y="264">H+2.5 grouping works?</text>
+    <text x="680" y="264">H+5 integrate</text>
+    <text x="860" y="264">H+6.5 freeze</text>
+  </g>
+
+  <text x="80" y="304" font-size="12" fill="#6b7280">Lanes meet only at the three checkpoints. The app lane front-loads risk: both screens land before H+4, keeping the last hours for wiring and rehearsal.</text>
+</svg>

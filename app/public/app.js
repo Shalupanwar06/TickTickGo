@@ -7,10 +7,12 @@ const state = { clusters: null, ungrouped: [], tickets: new Map(), fixtureNote: 
 
 async function load() {
   try {
-    const [c, t] = await Promise.all([
+    const [c, t, meta] = await Promise.all([
       fetch("/api/clusters").then((r) => r.json()),
       fetch("/api/tickets").then((r) => r.json()),
+      fetch("/api/meta").then((r) => r.json()).catch(() => ({ source: "fixtures" })),
     ]);
+    state.source = meta.source;
     state.clusters = [...c.clusters].sort((a, b) => b.score - a.score);
     state.ungrouped = c.ungrouped_ids || [];
     for (const tk of t.tickets || []) state.tickets.set(tk.id, tk);
@@ -61,7 +63,8 @@ function renderList() {
   const total =
     state.clusters.reduce((n, c) => n + c.ticket_ids.length, 0) + state.ungrouped.length;
   document.getElementById("batch-summary").textContent =
-    `${total} tickets · ${state.clusters.length} issues`;
+    `${total} tickets · ${state.clusters.length} issues` +
+    (state.source === "pipeline" ? "" : " · fixture data");
 
   const rows = state.clusters
     .map(
@@ -142,7 +145,32 @@ function analysisCard(a) {
     </section>`;
 }
 
+// Minimal markdown for the pipeline's packet_*.md: headers, bold, lists,
+// inline code, paragraphs. Escapes first — good enough for a one-page report.
+function mdToHtml(md) {
+  const lines = esc(md).split("\n");
+  let html = "", inList = false;
+  for (const line of lines) {
+    const h = line.match(/^(#{1,3}) (.*)/);
+    const li = line.match(/^[-*] (.*)/);
+    if (inList && !li) { html += "</ul>"; inList = false; }
+    if (h) html += `<h${h[1].length + 2}>${h[2]}</h${h[1].length + 2}>`;
+    else if (li) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${li[1]}</li>`; }
+    else if (line.trim() === "---") html += "<hr>";
+    else if (line.trim()) html += `<p>${line}</p>`;
+  }
+  if (inList) html += "</ul>";
+  return html
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\b(t\d{3}|d\d+)\b/g, '<span class="chip">$1</span>');
+}
+
 function packetCard(p) {
+  if (p.markdown) {
+    return `<section class="card packet-md"><h2>Escalation packet</h2>${mdToHtml(p.markdown)}</section>`;
+  }
   return `
     <section class="card">
       <h2>Escalation packet</h2>
