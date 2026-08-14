@@ -32,6 +32,7 @@ Update the right column as you go. This is the fastest way for either of you to 
 | Cluster detail screen | You | done — trace, analysis, packet, drafts |
 | Streaming trace | You | done — SSE, verified 4 steps + analysis + done |
 | Snapshot + video backup | You | not started |
+| UI touches + improvements | Raushan | handed off — see "UI handoff to Raushan" below |
 
 ---
 
@@ -104,6 +105,29 @@ You       [Setup ][Cluster ls][Detail vw ][Stream][Wireup][Rehrse]
 The lanes only meet at those three points — that's what makes this parallelize, and why the contract above has to be settled before either of you writes code. The app track deliberately front-loads its risk: setup and both screens land before H+4, leaving the last three hours for wiring and rehearsal rather than building. Protect that shape.
 
 A slide-ready SVG of the same swimlane is in `swimlane.svg`.
+
+---
+
+## UI handoff to Raushan
+
+Both screens are built, fixture-backed, and live on the Daytona sandbox. Everything is on `main` — pull and go.
+
+**Run locally:** `node app/server.js` → http://localhost:3000 (dev only; the demo runs from the sandbox).
+**Deploy to the sandbox:** `scripts/deploy.sh` — syncs `app/` + `fixtures/` into the running `ticktickgo` sandbox and restarts the server (~10s, preview URL stays stable). Fresh preview URL: `daytona preview-url ticktickgo -p 3000`. Needs the Daytona API key (see `.env.example`).
+
+**Sandbox quirks, learned the hard way:**
+- `daytona exec` re-joins argv and the remote bash re-parses it — pass a whole shell line, never `sh -c "..."` (it word-splits).
+- `daytona create -c dir` flattens each context dir into the build root, so `server.js`, `public/`, and the fixture JSONs all sit flat in `/workspace`.
+- The image has no `ps`/`pkill`; the server is tracked via `/tmp/app.pid` (deploy.sh handles it).
+- The Dockerfile CMD does not auto-run in a Daytona sandbox — deploy.sh starts the server.
+
+**Open UI items, in rough priority:**
+1. `trend` is computed client-side (≥half of a cluster's known tickets within 24h of the batch's newest ticket → Rising). If the pipeline can emit a `trend` field, add it to the contract — that needs both of us to agree — and delete the heuristic in `app/public/app.js` (`isRising`).
+2. Citation chips could highlight/scroll to the ticket in the member list on click (they only show a tooltip now).
+3. Empty state (`F1` ingest prompt with "load sample batch") is specced in `forge-spec.md` but not built.
+4. Small-screen layout hides secondary stats; untested below 400px. Demo is on a projector, so lowest priority.
+
+**Do not touch:** the uncited-bullet drop in the renderer (`bullets()` in app.js — hard rule 2), the 4-panel cap (`MAX_STEPS`), and the two-screen limit.
 
 ---
 
