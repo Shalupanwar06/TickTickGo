@@ -1,0 +1,61 @@
+{
+  "cluster_id": "c1",
+  "steps": [
+    {
+      "n": 1,
+      "tool": "read_file",
+      "input": {
+        "path": "storefront-fraud.js"
+      },
+      "result_summary": "// Meridian Supply Co. — payment fraud screening (SYNTHETIC DEMO CODE).\n// Shipped in deploy d6: \"Enable enhanced fraud screening for high-value transactions\".\n// THE INTENTIONAL BUG lives here, isolated so the fix agent can patch it:\n// orders at or above $1,000 are routed to an extended-verificati…"
+    },
+    {
+      "n": 2,
+      "tool": "read_file",
+      "input": {
+        "path": "storefront.js"
+      },
+      "result_summary": "Error: storefront.js does not exist yet"
+    },
+    {
+      "n": 3,
+      "tool": "read_file",
+      "input": {
+        "path": "storefront.html"
+      },
+      "result_summary": "Error: storefront.html does not exist yet"
+    },
+    {
+      "n": 4,
+      "tool": "write_file",
+      "input": {
+        "path": "storefront-fraud.js",
+        "content": "<881 chars>"
+      },
+      "result_summary": "{\"written\": \"storefront-fraud.js\", \"bytes\": 881}"
+    },
+    {
+      "n": 5,
+      "tool": "run_check",
+      "input": {},
+      "result_summary": "{\"passed\": true, \"cases\": [{\"name\": \"$40 order approved\", \"pass\": true, \"detail\": \"{\\\"approved\\\":true,\\\"screening\\\":\\\"standard\\\"}\"}, {\"name\": \"$1,300 order approved\", \"pass\": true, \"detail\": \"{\\\"approved\\\":true,\\\"screening\\\":\\\"standard\\\",\\\"requiresManualReview\\\":true}\"}]}"
+    }
+  ],
+  "summary": "Both smoke checks pass: the $40 order returns `{approved: true, screening: \"standard\"}` unchanged, and the $1,300 order now returns `{approved: true, screening: \"standard\", requiresManualReview: true}`.\n\nI replaced the `throw` in the `total >= HIGH_VALUE_THRESHOLD` branch — which routed high-value orders to the decommissioned extended-verification endpoint introduced in deploy d6 — with a standard-screening approval that carries `requiresManualReview: true`, so the risk team still reviews those orders. The sub-threshold path, the `$1,000` threshold constant, and the `window.fraudCheck` public API are untouched, keeping the patch to the single defective branch.\n\nOne caveat worth flagging to the escalation owners: the packet's merged note argues the real boundary is ~1,000 USD-*equivalent* post-FX (¥150,000 ≈ $1,000), but this module compares a raw `order.total` against a bare `1000`. I did not change that, since it's out of scope for this bug fix and the harness only covers USD cases — but if `order.total` arrives in the merchant's local currency, JPY and EUR orders will cross the manual-review threshold at the wrong point. That deserves a separate ticket with visibility into how `order.total` is populated.",
+  "diff": "--- a/storefront-fraud.js\n+++ b/storefront-fraud.js\n@@ -1,8 +1,9 @@\n // Meridian Supply Co. — payment fraud screening (SYNTHETIC DEMO CODE).\n // Shipped in deploy d6: \"Enable enhanced fraud screening for high-value transactions\".\n-// THE INTENTIONAL BUG lives here, isolated so the fix agent can patch it:\n-// orders at or above $1,000 are routed to an extended-verification endpoint\n-// that no longer exists, so the check throws and checkout fails.\n+// Fix: deploy d6 routed orders at or above $1,000 to an extended-verification\n+// endpoint that has since been decommissioned, so every high-value checkout threw.\n+// High-value orders now complete STANDARD screening and are flagged for the risk\n+// team via requiresManualReview instead of being routed off-box.\n (function () {\n   \"use strict\";\n \n@@ -11,12 +12,11 @@\n   function fraudCheck(order) {\n     var total = Number(order && order.total) || 0;\n     if (total >= HIGH_VALUE_THRESHOLD) {\n-      // deploy d6 routed high-value orders to extended verification; the\n-      // endpoint was decommissioned, so this path can never succeed.\n-      throw new Error(\n-        \"RISK_CHECK_TIMEOUT: extended verification endpoint unavailable \" +\n-        \"(introduced in deploy d6)\"\n-      );\n+      return {\n+        approved: true,\n+        screening: \"standard\",\n+        requiresManualReview: true\n+      };\n     }\n     return { approved: true, screening: \"standard\" };\n   }\n",
+  "check": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "$40 order approved",
+        "pass": true,
+        "detail": "{\"approved\":true,\"screening\":\"standard\"}"
+      },
+      {
+        "name": "$1,300 order approved",
+        "pass": true,
+        "detail": "{\"approved\":true,\"screening\":\"standard\",\"requiresManualReview\":true}"
+      }
+    ]
+  }
+}

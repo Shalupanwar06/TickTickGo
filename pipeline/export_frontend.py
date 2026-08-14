@@ -88,6 +88,21 @@ def export(cluster_id: str):
                  f"'python -m pipeline.run analyze {cluster_id}' on the current pipeline")
     _write("packet.json", {"cluster_id": cluster_id, "packet": analysis["packet"]})
 
+    # 6: fix record (optional — present once the fix agent has run)
+    fix_path = OUT / f"fix_{cluster_id}.json"
+    if fix_path.exists():
+        fix = json.loads(fix_path.read_text())
+        _write("fix.json", {
+            "cluster_id": cluster_id,
+            "steps": [{"n": s["step"], "tool": s["tool"], "input": s["input"],
+                       "result_summary": s["result_summary"]} for s in fix["steps"]],
+            "summary": fix["summary"],
+            "diff": fix["diff"],
+            "check": fix["check"],
+        })
+    else:
+        print("[export] no out/fix record yet — skipping fixtures/fix.json")
+
     print(f"[export] done — deploy with scripts/deploy.sh")
 
 
