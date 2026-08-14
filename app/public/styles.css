@@ -1,0 +1,123 @@
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #dfe2e8;
+  --text: #191c20;
+  --text-dim: #6b7280;
+  --accent: #2563eb;
+  --rising-bg: #fee2e2;
+  --rising-fg: #b91c1c;
+  --synthetic-bg: #fef3c7;
+  --synthetic-fg: #92400e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+.brand span { color: var(--accent); }
+
+.topbar-right { display: flex; align-items: center; gap: 0.8rem; }
+.batch-summary { color: var(--text-dim); font-size: 0.9rem; }
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.15rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-synthetic { background: var(--synthetic-bg); color: var(--synthetic-fg); }
+.badge-rising { background: var(--rising-bg); color: var(--rising-fg); }
+
+main { max-width: 880px; margin: 0 auto; padding: 1.6rem 1.2rem 3rem; }
+
+.screen-title { font-size: 1.05rem; font-weight: 600; color: var(--text-dim); margin: 0 0 1rem; }
+
+/* Cluster rows */
+.cluster-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 90px 110px;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.cluster-row:hover, .cluster-row:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 1px 6px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.cluster-name { font-size: 1.05rem; font-weight: 650; line-height: 1.3; }
+.cluster-name .badge-rising { margin-left: 0.5rem; vertical-align: 2px; }
+
+.stat { text-align: right; }
+.stat .num { display: block; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .lbl { display: block; color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-customers .num { font-size: 1.7rem; line-height: 1.1; }
+.stat-tickets .num, .stat-seen .num { font-size: 1rem; }
+
+.ungrouped {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  padding: 0.8rem 1.25rem;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  margin-top: 0.4rem;
+}
+
+/* States */
+.skeleton-row {
+  height: 74px;
+  border-radius: 10px;
+  margin-bottom: 0.7rem;
+  background: linear-gradient(90deg, #e9ebef 25%, #f3f4f6 50%, #e9ebef 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.note { color: var(--text-dim); font-size: 0.85rem; margin-top: 1rem; }
+.error-note { color: var(--rising-fg); }
+
+.back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+.back-link:hover { text-decoration: underline; }
+
+.stub {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 640px) {
+  .cluster-row { grid-template-columns: minmax(0, 1fr) 90px; }
+  .stat-tickets, .stat-seen { display: none; }
+}

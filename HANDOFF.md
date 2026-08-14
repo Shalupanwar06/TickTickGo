@@ -28,7 +28,7 @@ Update the right column as you go. This is the fastest way for either of you to 
 | Customer drafts | Raushan | not started |
 | Forge spec | You | done — `forge-spec.md` |
 | Daytona sandbox | You | done — sandbox `ticktickgo`, hello-world + fixture API live |
-| Cluster list screen | You | not started |
+| Cluster list screen | You | done — live on the sandbox, fixture-backed |
 | Cluster detail screen | You | not started |
 | Streaming trace | You | not started |
 | Snapshot + video backup | You | not started |

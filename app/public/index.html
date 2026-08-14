@@ -4,26 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TickTickGo</title>
-<style>
-  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #1a1d21; display: grid; place-items: center; min-height: 100vh; }
-  main { text-align: center; }
-  h1 { font-size: 2.2rem; margin: 0 0 .3rem; }
-  .badge { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 999px; padding: .15rem .7rem; font-size: .8rem; font-weight: 600; }
-  p { color: #5c6470; }
-  code { background: #e8eaee; padding: .1rem .35rem; border-radius: 4px; }
-</style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<main>
-  <h1>TickTickGo</h1>
-  <span class="badge">Synthetic data</span>
-  <p>Hello from the Daytona sandbox. Deploy path proven.</p>
-  <p>API check: <code id="api">…</code></p>
-</main>
-<script>
-  fetch("/api/clusters").then(r => r.json()).then(d =>
-    document.getElementById("api").textContent = d.clusters.length + " clusters loaded from fixtures"
-  ).catch(e => document.getElementById("api").textContent = "API error: " + e);
-</script>
+<header class="topbar">
+  <div class="brand">Tick<span>Tick</span>Go</div>
+  <div class="topbar-right">
+    <span id="batch-summary" class="batch-summary"></span>
+    <span class="badge badge-synthetic" title="All tickets, accounts, and deploys in this demo are generated">Synthetic data</span>
+  </div>
+</header>
+<main id="app" aria-live="polite"></main>
+<script src="/app.js"></script>
 </body>
 </html>
