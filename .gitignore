@@ -30,3 +30,7 @@ tmp/
 __pycache__/
 *.pyc
 out/
+
+# Next.js UI
+web/.next/
+web/out/

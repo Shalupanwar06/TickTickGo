@@ -25,7 +25,10 @@ const CORPUS = [
   path.join(__dirname, "pipeline-data", "tickets.json"),
 ].find(fs.existsSync);
 
-const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
+const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".png": "image/png", ".ico": "image/x-icon", ".txt": "text/plain" };
+
+// Next.js UI static export (web/out locally; /workspace/ui on the sandbox).
+const UI_DIR = [path.join(__dirname, "..", "web", "out"), path.join(__dirname, "ui")].find(fs.existsSync);
 
 function json(res, obj, status = 200) {
   res.writeHead(status, { "Content-Type": "application/json" });
@@ -213,6 +216,20 @@ const server = http.createServer((req, res) => {
     }
 
     if (p.startsWith("/api/")) return json(res, { error: "not found" }, 404);
+
+    // Next.js UI export mounted at /ui (basePath-built, trailingSlash layout).
+    if (UI_DIR && (p === "/ui" || p.startsWith("/ui/"))) {
+      let rel = decodeURIComponent(p.slice(3) || "/"); // Next chunk paths contain literal [id]
+      let uiFile = path.normalize(path.join(UI_DIR, rel === "/" ? "index.html" : rel));
+      if (uiFile.startsWith(UI_DIR)) {
+        if (fs.existsSync(uiFile) && fs.statSync(uiFile).isDirectory()) uiFile = path.join(uiFile, "index.html");
+        if (!fs.existsSync(uiFile)) uiFile = path.join(UI_DIR, "404.html");
+        if (fs.existsSync(uiFile)) {
+          res.writeHead(200, { "Content-Type": MIME[path.extname(uiFile)] || "application/octet-stream" });
+          return res.end(fs.readFileSync(uiFile));
+        }
+      }
+    }
 
     // Static files; SPA fallback to index.html.
     let file = path.normalize(path.join(PUBLIC, p === "/" ? "index.html" : p));
