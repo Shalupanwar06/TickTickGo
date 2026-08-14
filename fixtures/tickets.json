@@ -1,0 +1,15 @@
+{
+  "tickets": [
+    { "id": "t204", "customer_id": "a03", "created_at": "2026-08-11T14:14:00Z", "subject": "Checkout throws a 500", "body": "Since this morning our checkout throws a 500 on the confirm step. Chrome 126 on Windows. Error code PAY-5012 in the console." },
+    { "id": "t218", "customer_id": "a07", "created_at": "2026-08-11T16:40:00Z", "subject": "Can't complete my purchase", "body": "I add everything to the cart, hit the final button, and it just spins forever. Order was around $2,400. Tried twice." },
+    { "id": "t231", "customer_id": "a01", "created_at": "2026-08-11T19:22:00Z", "subject": "Payment page is blank", "body": "The payment page loads completely white. Nothing to click. Started today, worked fine last week. We're on the enterprise plan." },
+    { "id": "t236", "customer_id": "a09", "created_at": "2026-08-12T08:05:00Z", "subject": "Orders over ~$2k failing", "body": "Smaller test orders go through, but anything above roughly $2,000 fails at confirmation. Reproduced three times." },
+    { "id": "t241", "customer_id": "a04", "created_at": "2026-08-12T10:31:00Z", "subject": "Checkout broken", "body": "checkout not working pls fix" },
+    { "id": "t112", "customer_id": "a05", "created_at": "2026-08-08T09:30:00Z", "subject": "Export never finishes", "body": "Exporting last quarter's data as CSV just hangs at 90%. Smaller ranges work." },
+    { "id": "t145", "customer_id": "a11", "created_at": "2026-08-09T16:05:00Z", "subject": "Reset email takes hours", "body": "A colleague in our Berlin office requested a password reset at 9am and the email arrived after lunch." },
+    { "id": "t128", "customer_id": "a08", "created_at": "2026-08-07T11:48:00Z", "subject": "Empty dashboard", "body": "All the charts on the analytics dashboard are blank rectangles. Safari 18 on macOS. Fine in Chrome." },
+    { "id": "t101", "customer_id": "a02", "created_at": "2026-08-06T13:15:00Z", "subject": "Question about invoicing", "body": "How do I change the billing contact on our account?" },
+    { "id": "t142", "customer_id": "a06", "created_at": "2026-08-09T10:02:00Z", "subject": "Feature request: dark mode", "body": "Any chance of a dark theme? Half my team asks about it." }
+  ],
+  "note": "Frontend fixture — enough tickets to render both screens. Raushan's seed corpus (50 tickets) replaces this at integration. IDs referenced by clusters.json but absent here render as bare chips."
+}

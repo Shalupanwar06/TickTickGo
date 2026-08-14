@@ -1,0 +1,37 @@
+{
+  "clusters": [
+    {
+      "id": "c1",
+      "name": "Checkout fails on high-value orders",
+      "ticket_ids": ["t204", "t218", "t231", "t236", "t241", "t247", "t252", "t255", "t258", "t260", "t262", "t263"],
+      "first_seen": "2026-08-11T14:14:00Z",
+      "customer_count": 12,
+      "score": 88
+    },
+    {
+      "id": "c2",
+      "name": "CSV export times out on large date ranges",
+      "ticket_ids": ["t112", "t139", "t171", "t198", "t226"],
+      "first_seen": "2026-08-08T09:30:00Z",
+      "customer_count": 5,
+      "score": 47
+    },
+    {
+      "id": "c3",
+      "name": "Password reset emails delayed for EU accounts",
+      "ticket_ids": ["t145", "t167", "t203", "t229"],
+      "first_seen": "2026-08-09T16:05:00Z",
+      "customer_count": 4,
+      "score": 39
+    },
+    {
+      "id": "c4",
+      "name": "Dashboard charts render blank on Safari",
+      "ticket_ids": ["t128", "t190", "t221"],
+      "first_seen": "2026-08-07T11:48:00Z",
+      "customer_count": 2,
+      "score": 21
+    }
+  ],
+  "ungrouped_ids": ["t101", "t107", "t118", "t126", "t142", "t155", "t163", "t178", "t185", "t210", "t245", "t259"]
+}

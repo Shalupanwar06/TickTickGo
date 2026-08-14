@@ -1,0 +1,53 @@
+{
+  "cluster_id": "c1",
+  "created_at": "2026-08-12T11:00:00Z",
+  "steps": [
+    {
+      "n": 1,
+      "tool": "search_ticket_history",
+      "input": { "query": "checkout payment 500 confirm", "window_days": 30 },
+      "result_summary": "14 matching tickets in the last 30 days; 12 within the last 48 hours. No similar reports in the prior four weeks. [t204, t218, t231, t236]"
+    },
+    {
+      "n": 2,
+      "tool": "get_account",
+      "input": { "customer_ids": ["a01", "a03", "a07", "a09"] },
+      "result_summary": "Affected accounts span all tiers and three regions — not tier- or region-specific. Two of twelve are enterprise (a01, a09). [t231, t236]"
+    },
+    {
+      "n": 3,
+      "tool": "check_deploys",
+      "input": { "services": ["payments", "checkout"], "since": "2026-08-11T00:00:00Z" },
+      "result_summary": "Deploy d-3121 to payments-service shipped 2026-08-11 13:36Z — 38 minutes before the first report (t204 at 14:14Z). Description: 'card validation refactor'."
+    },
+    {
+      "n": 4,
+      "tool": "search_ticket_history",
+      "input": { "query": "order amount threshold failed", "window_days": 3 },
+      "result_summary": "Every ticket that mentions an amount involves an order over $2,000 (t218: $2,400; t236: ~$2,000 threshold). Tickets below that amount: none found."
+    }
+  ],
+  "analysis": {
+    "common": [
+      { "text": "All reports concern the checkout confirmation step failing; first report 38 minutes after deploy d-3121 to payments-service.", "cites": ["t204", "t218", "t231"], "tool": "check_deploys" },
+      { "text": "Every ticket that mentions an order amount involves an order over $2,000.", "cites": ["t218", "t236"], "tool": "search_ticket_history" }
+    ],
+    "varies": [
+      { "text": "Symptom differs by surface: server 500 with code PAY-5012, an infinite spinner, or a blank payment page.", "cites": ["t204", "t218", "t231"] },
+      { "text": "Browsers and platforms vary across reports; not client-specific.", "cites": ["t204", "t128"] }
+    ],
+    "ruled_out": [
+      { "text": "Not tier- or region-specific — affected accounts span all tiers and three regions.", "cites": ["t231", "t236"], "tool": "get_account" },
+      { "text": "Not a long-standing issue — no similar reports in the four weeks before 2026-08-11.", "cites": ["t204"], "tool": "search_ticket_history" }
+    ],
+    "hypotheses": [
+      {
+        "text": "Deploy d-3121 ('card validation refactor') broke confirmation for orders above roughly $2,000; the differing symptoms are three surfaces of the same backend failure.",
+        "cites": ["t204", "t218", "t236"],
+        "tool": "check_deploys",
+        "status": "unconfirmed",
+        "not_examined": "No access to code, server logs, or the deploy diff. The $2,000 threshold is inferred from two tickets that mention amounts; other tickets do not state order values."
+      }
+    ]
+  }
+}

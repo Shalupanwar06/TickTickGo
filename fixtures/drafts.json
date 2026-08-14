@@ -1,0 +1,23 @@
+{
+  "cluster_id": "c1",
+  "drafts": [
+    {
+      "customer_id": "a03",
+      "ticket_id": "t204",
+      "status": "pending_approval",
+      "body": "Hi — you reported checkout returning a 500 with error PAY-5012 yesterday morning. That was our bug, not yours: it affected checkout confirmations starting Aug 11 and we've identified the likely cause. We'll follow up here the moment it's resolved. Thanks for the console detail — it helped."
+    },
+    {
+      "customer_id": "a07",
+      "ticket_id": "t218",
+      "status": "pending_approval",
+      "body": "Hi — about the ~$2,400 order that kept spinning at the final step: you weren't doing anything wrong. We found a checkout issue affecting larger orders since Aug 11 and are working on it now. Your cart is safe to retry once we confirm the fix — we'll reply here when it ships."
+    },
+    {
+      "customer_id": "a01",
+      "ticket_id": "t231",
+      "status": "pending_approval",
+      "body": "Hi — the blank payment page you reported is part of a checkout issue that began Aug 11, affecting several customers. It's not specific to your account or plan. We're on it and will update you here as soon as it's fixed."
+    }
+  ]
+}
